@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  users:
+    build:
+      context: ./services/users
+    container_name: trailbox-users
+    environment:
+      - PORT=8001
+    ports:
+      - "8001:8001"
+  routes:
+    build:
+      context: ./services/routes
+    container_name: trailbox-routes
+    environment:
+      - PORT=8002
+    ports:
+      - "8002:8002"
