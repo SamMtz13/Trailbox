@@ -17,3 +17,13 @@ services:
       - PORT=8002
     ports:
       - "8002:8002"
+
+  workouts:
+    build:
+      context: ./services/workouts
+    container_name: trailbox-workouts
+    environment:
+      - PORT=8003
+    ports:
+      - "8003:8003"
+      
