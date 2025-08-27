@@ -26,4 +26,12 @@ services:
       - PORT=8003
     ports:
       - "8003:8003"
-      
+
+  reviews:
+    build:
+      context: ./services/reviews
+    container_name: trailbox-reviews
+    environment:
+      - PORT=8004
+    ports:
+      - "8004:8004"
