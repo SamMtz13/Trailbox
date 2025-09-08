@@ -14,7 +14,7 @@ type memoryRepository struct {
 }
 
 // constructor
-func New() repository.Repository {
+func NewRepository() repository.Repository {
 	return &memoryRepository{routes: make(map[int]*model.Route)}
 }
 
