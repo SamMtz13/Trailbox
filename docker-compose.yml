@@ -16,6 +16,7 @@ services:
     environment:
       - PORT=8002
       - PEER_URL=http://users:8001
+      - PEER_URL_2=http://workouts:8003
     ports:
       - "8002:8002"
 
