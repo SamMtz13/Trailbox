@@ -3,8 +3,8 @@ package memory
 import (
 	"fmt"
 	"sync"
-	"trailbox/workouts/internal/model"
-	"trailbox/workouts/internal/repository"
+	"trailbox/services/workouts/internal/model"
+	"trailbox/services/workouts/internal/repository"
 )
 
 type memoryRepo struct {

@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"trailbox/users/internal/controller/users"
+	"trailbox/services/users/internal/controller/users"
 )
 
 type UserHandler struct {

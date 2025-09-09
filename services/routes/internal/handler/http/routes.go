@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-	"trailbox/routes/internal/client/peer"
-	"trailbox/routes/internal/controller/routes"
+	"trailbox/services/routes/internal/client/peer"
+	"trailbox/services/routes/internal/controller/routes"
 )
 
 type RouteHandler struct {

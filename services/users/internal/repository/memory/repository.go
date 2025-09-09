@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"trailbox/users/internal/model"
-	"trailbox/users/internal/repository"
+	"trailbox/services/users/internal/model"
+	"trailbox/services/users/internal/repository"
 )
 
 type memoryRepo struct {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"trailbox/routes/internal/client/peer"
+	"trailbox/services/routes/internal/client/peer"
 )
 
 // PeerHandler expone endpoints que llaman a otro microservicio ("curl" en Go).

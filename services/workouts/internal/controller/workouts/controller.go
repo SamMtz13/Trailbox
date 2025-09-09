@@ -1,14 +1,14 @@
 package workouts
 
 import (
-	"trailbox/workouts/internal/model"
-	"trailbox/workouts/internal/repository"
+	"trailbox/services/workouts/internal/model"
+	"trailbox/services/workouts/internal/repository"
 )
 
 type Controller struct {
 	repo repository.Repository
-
 }
+
 func NewController(r repository.Repository) *Controller {
 	return &Controller{repo: r}
 }

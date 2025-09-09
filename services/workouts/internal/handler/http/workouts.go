@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"trailbox/workouts/internal/controller/workouts"
+	"trailbox/services/workouts/internal/controller/workouts"
 )
 
 type WorkoutHandler struct {

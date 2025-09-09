@@ -1,6 +1,6 @@
 package repository
 
-import "trailbox/users/internal/model"
+import "trailbox/services/users/internal/model"
 
 type Repository interface {
 	Create(u *model.User) error

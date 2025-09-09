@@ -1,6 +1,6 @@
 package repository
 
-import "trailbox/routes/internal/model"
+import "trailbox/services/routes/internal/model"
 
 type Repository interface {
 	Create(route *model.Route) error

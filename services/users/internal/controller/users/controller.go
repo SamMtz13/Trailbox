@@ -1,8 +1,8 @@
 package users
 
 import (
-	"trailbox/users/internal/model"
-	"trailbox/users/internal/repository"
+	"trailbox/services/users/internal/model"
+	"trailbox/services/users/internal/repository"
 )
 
 type Controller struct {

@@ -1,14 +1,19 @@
-FROM golang:1.22 AS builder
+
+FROM golang:1.24 AS builder
 WORKDIR /app
 
-COPY go.mod ./
+
+COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
-# 👇 OBLIGATORIO: indicar el paquete donde está main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/service ./cmd
 
-FROM scratch
-COPY --from=builder /bin/service /service
+COPY services/users/ ./services/users/
+
+
+WORKDIR /app/services/users
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./cmd
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=builder /service /service
 EXPOSE 8001
 ENTRYPOINT ["/service"]
