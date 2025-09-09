@@ -3,3 +3,10 @@ docker compose build --no-cache routes    borrar chache por si cambio de rutas
 docker compose up -d routes      pa arriba routes
 
 docker compose logs -f routes   ver logs, para ver el ping con 8001/health (comunicacion)
+
+
+SERVICE DISCOVERY VIA CONSUL
+
+PROMETHEUS --- LOGS 
+
+
