@@ -40,7 +40,7 @@ func (h *PeerHandler) HandlePeerHealth(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(body)
 }
 
-// GET /peer/proxy?path=/v1/lo-que-sea -> reenvía GET al peer en ese path
+// GET /peer/proxy?path=/v1/lo-que-sea -> Pensado para hacer get de users cuando tenga info
 // func (h *PeerHandler) HandlePeerProxy(w http.ResponseWriter, r *http.Request) {
 // 	if h.client == nil {
 // 		http.Error(w, "peer not configured (set PEER_URL)", http.StatusServiceUnavailable)

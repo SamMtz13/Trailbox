@@ -25,14 +25,13 @@ func main() {
 
 	// HTTP mux
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", routehttp.Healthz) // asegúrate que SERVICE_HEALTH_PATH=/health
+	mux.HandleFunc("/health", routehttp.Healthz)
 	routeHandler := routehttp.NewRouteHandler(ctrl)
 	mux.HandleFunc("/v1/routes", routeHandler.HandleList)
 
-	// Peer tools
+	// Peer tools -> get de users
 	peerHandler := routehttp.NewPeerHandler()
 	mux.HandleFunc("/peer/health", peerHandler.HandlePeerHealth)
-	// mux.HandleFunc("/peer/proxy", peerHandler.HandlePeerProxy)
 
 	// Heartbeat opcional cada 30s
 	if os.Getenv("DISABLE_HEARTBEAT") == "" {
@@ -44,7 +43,6 @@ func main() {
 		}()
 	}
 
-	// Puerto
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
@@ -70,7 +68,6 @@ func main() {
 		log.Fatalf("[consul] register error: %v", err)
 	}
 	log.Printf("[consul] service registered id=%s", id)
-	// ============================================================
 
 	// Levantar servidor en goroutine
 	go func() {
