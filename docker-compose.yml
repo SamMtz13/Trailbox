@@ -15,7 +15,7 @@ services:
 
   users:
     build:
-      context: .                  
+      context: .
       dockerfile: services/users/Dockerfile
     container_name: trailbox-users
     environment:
@@ -23,7 +23,7 @@ services:
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=users
       - SERVICE_ADDRESS=users
-      - SERVICE_HEALTH_PATH=/healthz
+      - SERVICE_HEALTH_PATH=/health        # ← unifica a /health
     ports: ["8001:8001"]
     depends_on:
       consul:
@@ -32,7 +32,7 @@ services:
 
   routes:
     build:
-      context: .                
+      context: .
       dockerfile: services/routes/Dockerfile
     container_name: trailbox-routes
     environment:
@@ -41,15 +41,18 @@ services:
       - SERVICE_NAME=routes
       - SERVICE_ADDRESS=routes
       - SERVICE_HEALTH_PATH=/health
+      - PEER_URL=http://users:8001         # ← necesario para /peer/health y el ticker
     ports: ["8002:8002"]
     depends_on:
       consul:
         condition: service_healthy
+      users:                                # opcional, ayuda a que users esté listo antes
+        condition: service_started
     restart: unless-stopped
 
   workouts:
     build:
-      context: .                  
+      context: .
       dockerfile: services/workouts/Dockerfile
     container_name: trailbox-workouts
     environment:
@@ -57,10 +60,9 @@ services:
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=workouts
       - SERVICE_ADDRESS=workouts
-      - SERVICE_HEALTH_PATH=/healthz
+      - SERVICE_HEALTH_PATH=/health        # ← unifica a /health
     ports: ["8003:8003"]
     depends_on:
       consul:
         condition: service_healthy
     restart: unless-stopped
-

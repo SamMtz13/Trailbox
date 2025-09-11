@@ -12,7 +12,7 @@ import (
 )
 
 // Client es un mini cliente HTTP para hablar con otro microservicio.
-// Lee la base desde PEER_URL (ej: http://ms-b:8003).
+
 type Client struct {
 	base   *url.URL
 	client *http.Client

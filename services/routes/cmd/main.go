@@ -32,7 +32,7 @@ func main() {
 	// Peer tools
 	peerHandler := routehttp.NewPeerHandler()
 	mux.HandleFunc("/peer/health", peerHandler.HandlePeerHealth)
-	mux.HandleFunc("/peer/proxy", peerHandler.HandlePeerProxy)
+	// mux.HandleFunc("/peer/proxy", peerHandler.HandlePeerProxy)
 
 	// Heartbeat opcional cada 30s
 	if os.Getenv("DISABLE_HEARTBEAT") == "" {

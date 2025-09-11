@@ -13,7 +13,6 @@ type PeerHandler struct {
 	client *peer.Client
 }
 
-// NewPeerHandler construye el handler. Si PEER_URL no está seteada, devolverá 503.
 func NewPeerHandler() *PeerHandler {
 	c, err := peer.New()
 	if err != nil {
@@ -42,29 +41,29 @@ func (h *PeerHandler) HandlePeerHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /peer/proxy?path=/v1/lo-que-sea -> reenvía GET al peer en ese path
-func (h *PeerHandler) HandlePeerProxy(w http.ResponseWriter, r *http.Request) {
-	if h.client == nil {
-		http.Error(w, "peer not configured (set PEER_URL)", http.StatusServiceUnavailable)
-		return
-	}
-	path := r.URL.Query().Get("path")
-	if path == "" {
-		http.Error(w, "missing query param: path", http.StatusBadRequest)
-		return
-	}
+// func (h *PeerHandler) HandlePeerProxy(w http.ResponseWriter, r *http.Request) {
+// 	if h.client == nil {
+// 		http.Error(w, "peer not configured (set PEER_URL)", http.StatusServiceUnavailable)
+// 		return
+// 	}
+// 	path := r.URL.Query().Get("path")
+// 	if path == "" {
+// 		http.Error(w, "missing query param: path", http.StatusBadRequest)
+// 		return
+// 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
-	defer cancel()
+// 	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+// 	defer cancel()
 
-	code, body, err := h.client.Get(ctx, path)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadGateway)
-		return
-	}
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.WriteHeader(code)
-	_, _ = w.Write(body)
-}
+// 	code, body, err := h.client.Get(ctx, path)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusBadGateway)
+// 		return
+// 	}
+// 	w.Header().Set("Content-Type", "application/octet-stream")
+// 	w.WriteHeader(code)
+// 	_, _ = w.Write(body)
+// }
 
 // Heartbeat pega periódicamente al peer para revisar salud.
 type Heartbeat struct {
