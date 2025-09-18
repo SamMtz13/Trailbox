@@ -83,3 +83,21 @@ services:
       consul:
         condition: service_healthy
     restart: unless-stopped
+
+  reviews:
+    build:
+      context: .
+      dockerfile: services/reviews/Dockerfile
+    container_name: trailbox-reviews
+    environment:
+      - PORT=8004
+      - CONSUL_HTTP_ADDR=http://consul:8500
+      - SERVICE_NAME=reviews
+      - SERVICE_ADDRESS=reviews
+      - SERVICE_HEALTH_PATH=/health   # 👈 debe coincidir con tu main.go
+    ports:
+      - "8004:8004"
+    depends_on:
+      consul:
+        condition: service_healthy
+    restart: unless-stopped
