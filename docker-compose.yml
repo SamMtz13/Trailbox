@@ -8,7 +8,7 @@ services:
       - "8500:8500"
       - "8600:8600/udp"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8500/v1/status/leader"]
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
       interval: 5s
       timeout: 2s
       retries: 10
@@ -23,7 +23,7 @@ services:
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=users
       - SERVICE_ADDRESS=users
-      - SERVICE_HEALTH_PATH=/health        # ← unifica a /health
+      - SERVICE_HEALTH_PATH=/healthz       # ← unifica a /health
     ports: ["8001:8001"]
     depends_on:
       consul:
@@ -60,8 +60,25 @@ services:
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=workouts
       - SERVICE_ADDRESS=workouts
-      - SERVICE_HEALTH_PATH=/health        # ← unifica a /health
+      - SERVICE_HEALTH_PATH=/healthz       
     ports: ["8003:8003"]
+    depends_on:
+      consul:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: trailbox-gateway
+    environment:
+      - PORT=8080
+      - CONSUL_HTTP_ADDR=http://consul:8500
+      - SERVICE_NAME=gateway
+      - SERVICE_ADDRESS=gateway
+      - SERVICE_HEALTH_PATH=/health
+    ports: ["8080:8080"]
     depends_on:
       consul:
         condition: service_healthy

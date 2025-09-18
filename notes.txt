@@ -10,3 +10,4 @@ SERVICE DISCOVERY VIA CONSUL
 PROMETHEUS --- LOGS 
 
 
+docker compose down -v por si falla consul 
