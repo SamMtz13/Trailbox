@@ -101,3 +101,21 @@ services:
       consul:
         condition: service_healthy
     restart: unless-stopped
+
+  notifications:
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+    container_name: trailbox-notifications
+    environment:
+      - PORT=8005
+      - CONSUL_HTTP_ADDR=http://consul:8500
+      - SERVICE_NAME=notifications
+      - SERVICE_ADDRESS=notifications
+      - SERVICE_HEALTH_PATH=/health
+    ports:
+      - "8005:8005"
+    depends_on:
+      consul:
+        condition: service_healthy
+    restart: unless-stopped
