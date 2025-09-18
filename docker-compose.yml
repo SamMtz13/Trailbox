@@ -119,3 +119,61 @@ services:
       consul:
         condition: service_healthy
     restart: unless-stopped
+  map:
+    build:
+      context: .
+      dockerfile: services/map/Dockerfile
+    container_name: trailbox-map
+    environment:
+      - PORT=8006
+      - CONSUL_HTTP_ADDR=http://consul:8500
+      - SERVICE_NAME=map
+      - SERVICE_ADDRESS=map
+      - SERVICE_HEALTH_PATH=/health
+    ports:
+      - "8006:8006"
+    depends_on:
+      consul:
+        condition: service_healthy
+    restart: unless-stopped
+  leaderboard:
+    build:
+      context: .
+      dockerfile: services/leaderboard/Dockerfile
+    container_name: trailbox-leaderboard
+    environment:
+      - PORT=8007
+      - CONSUL_HTTP_ADDR=http://consul:8500
+      - SERVICE_NAME=leaderboard
+      - SERVICE_ADDRESS=leaderboard
+      - SERVICE_HEALTH_PATH=/health
+    ports:
+      - "8007:8007"
+    depends_on:
+      consul:
+        condition: service_healthy
+    restart: unless-stopped
+  postgres:
+    image: postgres:16
+    container_name: trailbox-postgres
+    environment:
+      - POSTGRES_USER=trailbox
+      - POSTGRES_PASSWORD=trailbox
+      - POSTGRES_DB=trailbox
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: trailbox-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  pgdata:
