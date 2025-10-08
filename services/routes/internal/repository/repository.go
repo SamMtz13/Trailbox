@@ -1,9 +1,13 @@
 package repository
 
-import "trailbox/services/routes/internal/model"
+import (
+	"context"
+
+	"trailbox/services/routes/internal/model"
+)
 
 type Repository interface {
-	Create(route *model.Route) error
-	GetByID(id int) (*model.Route, error)
-	List() ([]*model.Route, error)
+	CreateRoute(ctx context.Context, route *model.Route) error
+	GetRoute(id string) (*model.Route, error)
+	ListRoutes() ([]model.Route, error)
 }

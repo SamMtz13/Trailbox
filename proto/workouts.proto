@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package trailbox.workouts;
+
+option go_package = "trailbox/gen/workouts;workouts";
+
+import "common.proto";
+
+service Workouts {
+  rpc GetWorkout(trailbox.common.UserId) returns (Workout);
+  rpc ListWorkouts(ListWorkoutsRequest) returns (ListWorkoutsResponse);
+}
+
+message Workout {
+  string id = 1;
+  string user_id = 2;
+  string route_id = 3;
+  string date = 4;
+  double duration = 5;
+  double calories = 6;
+}
+
+message ListWorkoutsRequest {}
+message ListWorkoutsResponse {
+  repeated Workout workouts = 1;
+}

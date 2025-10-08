@@ -1,44 +1,31 @@
 package controller
 
 import (
-	"context"
-	"errors"
-	"time"
+	"trailbox/services/reviews/internal/model"
+	"trailbox/services/reviews/internal/repository/db"
 )
 
-type Review struct {
-	ID        string    `json:"id"`
-	UserID    string    `json:"user_id"`
-	RouteID   string    `json:"route_id"`
-	Rating    int       `json:"rating"` // 1-5
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-type Repository interface {
-	Create(ctx context.Context, r Review) (Review, error)
-	List(ctx context.Context, routeID, userID string) ([]Review, error)
-}
-
 type Controller struct {
-	repo Repository
+	repo *db.Repository
 }
 
-func NewController(r Repository) *Controller {
+func NewController(r *db.Repository) *Controller {
 	return &Controller{repo: r}
 }
 
-func (c *Controller) Create(ctx context.Context, r Review) (Review, error) {
-	if r.UserID == "" || r.RouteID == "" {
-		return Review{}, errors.New("user_id and route_id are required")
+func (c *Controller) AddReview(userID, routeID, comment string, rating int) (*model.Review, error) {
+	r := &model.Review{
+		UserID:  userID,
+		RouteID: routeID,
+		Comment: comment,
+		Rating:  rating,
 	}
-	if r.Rating < 1 || r.Rating > 5 {
-		return Review{}, errors.New("rating must be 1..5")
+	if err := c.repo.Create(r); err != nil {
+		return nil, err
 	}
-	r.CreatedAt = time.Now().UTC()
-	return c.repo.Create(ctx, r)
+	return r, nil
 }
 
-func (c *Controller) List(ctx context.Context, routeID, userID string) ([]Review, error) {
-	return c.repo.List(ctx, routeID, userID)
+func (c *Controller) ListReviews(routeID string) ([]*model.Review, error) {
+	return c.repo.ListByRoute(routeID)
 }

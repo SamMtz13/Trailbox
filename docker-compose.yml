@@ -1,16 +1,15 @@
-version: "3.9"
 services:
   consul:
     image: hashicorp/consul:1.17
     container_name: trailbox-consul
     command: agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0
     ports:
-      - "8500:8500"
-      - "8600:8600/udp"
+      - "8500:8500"       # API/GUI
+      - "8600:8600/udp"   # DNS
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
-      interval: 5s
-      timeout: 2s
+      test: ["CMD", "consul", "info"]
+      interval: 10s
+      timeout: 10s
       retries: 10
 
   users:
@@ -19,14 +18,21 @@ services:
       dockerfile: services/users/Dockerfile
     container_name: trailbox-users
     environment:
-      - PORT=8001
+      - PORT=50051
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=users
       - SERVICE_ADDRESS=users
-      - SERVICE_HEALTH_PATH=/healthz       # ← unifica a /health
-    ports: ["8001:8001"]
+      - DB_HOST=postgres        # 👈 usa el nombre del servicio
+      - DB_PORT=5432
+      - DB_USER=trailbox
+      - DB_PASS=trailbox
+      - DB_NAME=trailbox
+    ports:
+      - "8011:50051"
     depends_on:
       consul:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     restart: unless-stopped
 
@@ -36,18 +42,22 @@ services:
       dockerfile: services/routes/Dockerfile
     container_name: trailbox-routes
     environment:
-      - PORT=8002
+      - PORT=50051
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=trailbox
+      - DB_PASS=trailbox
+      - DB_NAME=trailbox
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=routes
       - SERVICE_ADDRESS=routes
-      - SERVICE_HEALTH_PATH=/health
-      - PEER_URL=http://users:8001         # ← necesario para /peer/health y el ticker
-    ports: ["8002:8002"]
+    ports:
+      - "8002:50051"   # 👈 externo 8002 → interno 50051
     depends_on:
       consul:
         condition: service_healthy
-      users:                                # opcional, ayuda a que users esté listo antes
-        condition: service_started
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   workouts:
@@ -56,14 +66,16 @@ services:
       dockerfile: services/workouts/Dockerfile
     container_name: trailbox-workouts
     environment:
-      - PORT=8003
+      - PORT=50051
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=workouts
       - SERVICE_ADDRESS=workouts
-      - SERVICE_HEALTH_PATH=/healthz       
-    ports: ["8003:8003"]
+    ports:
+      - "8003:50051"
     depends_on:
       consul:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     restart: unless-stopped
 
@@ -73,34 +85,43 @@ services:
       dockerfile: services/gateway/Dockerfile
     container_name: trailbox-gateway
     environment:
-      - PORT=8080
+      - PORT=50051
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=gateway
       - SERVICE_ADDRESS=gateway
-      - SERVICE_HEALTH_PATH=/health
-    ports: ["8080:8080"]
+    ports:
+      - "8080:50051"
     depends_on:
       consul:
         condition: service_healthy
     restart: unless-stopped
 
+  
   reviews:
     build:
       context: .
       dockerfile: services/reviews/Dockerfile
     container_name: trailbox-reviews
     environment:
-      - PORT=8004
-      - CONSUL_HTTP_ADDR=http://consul:8500
+      - PORT=50051
       - SERVICE_NAME=reviews
       - SERVICE_ADDRESS=reviews
-      - SERVICE_HEALTH_PATH=/health   # 👈 debe coincidir con tu main.go
+      - SERVICE_HEALTH_PATH=/grpc.health.v1.Health/Check
+      - CONSUL_HTTP_ADDR=http://consul:8500
+      - DB_HOST=trailbox-postgres
+      - DB_PORT=5432
+      - DB_USER=trailbox
+      - DB_PASS=trailbox
+      - DB_NAME=trailbox
     ports:
-      - "8004:8004"
+      - "8004:50051"
     depends_on:
       consul:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
 
   notifications:
     build:
@@ -108,51 +129,75 @@ services:
       dockerfile: services/notifications/Dockerfile
     container_name: trailbox-notifications
     environment:
-      - PORT=8005
+      - PORT=50051
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=notifications
       - SERVICE_ADDRESS=notifications
-      - SERVICE_HEALTH_PATH=/health
+      - DB_HOST=postgres
+      - DB_USER=trailbox
+      - DB_PASS=trailbox
+      - DB_NAME=trailbox
+      - DB_PORT=5432
     ports:
-      - "8005:8005"
+      - "8005:50051"
     depends_on:
       consul:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
-  map:
+
+
+  maps:
     build:
       context: .
       dockerfile: services/map/Dockerfile
-    container_name: trailbox-map
+    container_name: trailbox-maps
     environment:
-      - PORT=8006
+      - PORT=50051
+      - SERVICE_NAME=maps
+      - SERVICE_ADDRESS=maps
+      - SERVICE_HEALTH_PATH=/grpc.health.v1.Health/Check
       - CONSUL_HTTP_ADDR=http://consul:8500
-      - SERVICE_NAME=map
-      - SERVICE_ADDRESS=map
-      - SERVICE_HEALTH_PATH=/health
+      - DB_HOST=trailbox-postgres
+      - DB_PORT=5432
+      - DB_USER=trailbox
+      - DB_PASS=trailbox
+      - DB_NAME=trailbox
     ports:
-      - "8006:8006"
+      - "8006:50051"
     depends_on:
       consul:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+
   leaderboard:
     build:
       context: .
       dockerfile: services/leaderboard/Dockerfile
     container_name: trailbox-leaderboard
     environment:
-      - PORT=8007
+      - PORT=50051
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=trailbox
+      - DB_PASS=trailbox
+      - DB_NAME=trailbox
       - CONSUL_HTTP_ADDR=http://consul:8500
       - SERVICE_NAME=leaderboard
       - SERVICE_ADDRESS=leaderboard
-      - SERVICE_HEALTH_PATH=/health
-    ports:
-      - "8007:8007"
     depends_on:
       consul:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8007:50051"
     restart: unless-stopped
+
   postgres:
     image: postgres:16
     container_name: trailbox-postgres
@@ -162,18 +207,29 @@ services:
       - POSTGRES_DB=trailbox
     ports:
       - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trailbox -d trailbox"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
-  adminer:
-    image: adminer:latest
-    container_name: trailbox-adminer
-    ports:
-      - "8080:8080"
+
+  migrator:
+    image: migrate/migrate
     depends_on:
-      - postgres
-    restart: unless-stopped
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./services/users/internal/migrations:/migrations/users
+      - ./services/routes/internal/migrations:/migrations/routes
+      - ./services/workouts/internal/migrations:/migrations/workouts
+    entrypoint: [
+      "sh", "-c",
+      "migrate -path=/migrations/users -database postgres://trailbox:trailbox@postgres:5432/trailbox?sslmode=disable up && \
+       migrate -path=/migrations/routes -database postgres://trailbox:trailbox@postgres:5432/trailbox?sslmode=disable up && \
+       migrate -path=/migrations/workouts -database postgres://trailbox:trailbox@postgres:5432/trailbox?sslmode=disable up"
+    ]
 
 volumes:
-  pgdata:
+  pgdata: {}

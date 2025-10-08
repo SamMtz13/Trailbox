@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package trailbox.reviews;
+
+option go_package = "trailbox/gen/reviews;reviews";
+
+import "common.proto";
+
+// Servicio principal para reseñas
+service Reviews {
+  rpc GetReviews(ReviewListRequest) returns (ReviewListResponse);
+  rpc CreateReview(CreateReviewRequest) returns (Review);
+}
+
+// Mensaje base: una reseña
+message Review {
+  string id = 1;
+  string user_id = 2;
+  string route_id = 3;
+  int32 rating = 4;
+  string comment = 5;
+  string created_at = 6;
+}
+
+// Solicitud para listar reseñas de una ruta
+message ReviewListRequest {
+  string route_id = 1;
+}
+
+// Respuesta al listar reseñas
+message ReviewListResponse {
+  repeated Review reviews = 1;
+}
+
+// Solicitud para crear una reseña
+message CreateReviewRequest {
+  string user_id = 1;
+  string route_id = 2;
+  int32 rating = 3;
+  string comment = 4;
+}

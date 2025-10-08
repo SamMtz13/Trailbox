@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package trailbox.maps;
+
+option go_package = "trailbox/gen/maps;maps";
+
+import "common.proto";
+
+// Servicio principal de mapas
+service Map {
+  rpc GetRoute (GetRouteRequest) returns (GetRouteResponse);
+  rpc SetRoute (SetRouteRequest) returns (SetRouteResponse);
+}
+
+// Petición para obtener los datos de una ruta
+message GetRouteRequest {
+  string route_id = 1;
+}
+
+// Respuesta con la información geográfica
+message GetRouteResponse {
+  string route_id = 1;
+  string geo_json = 2;
+  string created_at = 3;
+}
+
+// Petición para crear o actualizar la ruta
+message SetRouteRequest {
+  string route_id = 1;
+  string geo_json = 2;
+}
+
+// Respuesta de confirmación
+message SetRouteResponse {
+  bool ok = 1;
+}

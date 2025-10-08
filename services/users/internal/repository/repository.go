@@ -1,9 +1,12 @@
 package repository
 
-import "trailbox/services/users/internal/model"
+import (
+	"context"
+	"trailbox/services/users/internal/model"
+)
 
 type Repository interface {
-	Create(u *model.User) error
-	GetByID(id string) (*model.User, error)
-	List() ([]*model.User, error)
+	CreateUser(ctx context.Context, u *model.User) error
+	GetUser(id string) (*model.User, error)
+	ListUsers() ([]model.User, error)
 }

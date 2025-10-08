@@ -1,19 +1,17 @@
-
 FROM golang:1.24 AS builder
 WORKDIR /app
-
 
 COPY go.mod go.sum ./
 RUN go mod download
 
+COPY . .
 
-COPY services/routes/ ./services/routes/
-
-WORKDIR /app/services/routes
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./cmd
-
+# ✅ Compila desde la ruta completa del proyecto
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./services/routes/cmd/grpcmain
 
 FROM gcr.io/distroless/static-debian12
 COPY --from=builder /service /service
-EXPOSE 8002
+COPY services/routes/.env /.env
+
+EXPOSE 50051
 ENTRYPOINT ["/service"]

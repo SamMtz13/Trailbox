@@ -4,12 +4,12 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY services/leaderboard/ ./services/leaderboard/
-
-WORKDIR /app/services/leaderboard
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./cmd
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./services/leaderboard/cmd/grpcmain
 
 FROM gcr.io/distroless/static-debian12
 COPY --from=builder /service /service
-EXPOSE 8007
+COPY services/leaderboard/.env /.env
+
+EXPOSE 50051
 ENTRYPOINT ["/service"]

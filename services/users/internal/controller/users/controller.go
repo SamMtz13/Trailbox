@@ -1,8 +1,12 @@
 package users
 
 import (
+	"context"
+
 	"trailbox/services/users/internal/model"
 	"trailbox/services/users/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type Controller struct {
@@ -14,14 +18,18 @@ func NewController(r repository.Repository) *Controller {
 }
 
 func (c *Controller) AddUser(id, name string) error {
-	u := &model.User{ID: id, Name: name}
-	return c.repo.Create(u)
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return err
+	}
+	u := &model.User{ID: uid, Name: name}
+	return c.repo.CreateUser(context.TODO(), u) // ✅ reemplazado nil → context.TODO()
 }
 
 func (c *Controller) GetUser(id string) (*model.User, error) {
-	return c.repo.GetByID(id)
+	return c.repo.GetUser(id)
 }
 
-func (c *Controller) ListUsers() ([]*model.User, error) {
-	return c.repo.List()
+func (c *Controller) ListUsers() ([]model.User, error) {
+	return c.repo.ListUsers()
 }

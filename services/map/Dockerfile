@@ -4,12 +4,12 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY services/map/ ./services/map/
-
-WORKDIR /app/services/map
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./cmd
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./services/map/cmd/grpcmain
 
 FROM gcr.io/distroless/static-debian12
 COPY --from=builder /service /service
-EXPOSE 8006
+COPY services/map/.env /.env
+
+EXPOSE 50051
 ENTRYPOINT ["/service"]

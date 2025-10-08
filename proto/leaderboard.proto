@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package trailbox.leaderboard;
+option go_package = "trailbox/gen/leaderboard;leaderboard";
+
+import "common.proto";
+
+// Servicio gRPC de Leaderboard
+service Leaderboard {
+  // Retorna los N usuarios con mejor puntaje
+  rpc GetTop (GetTopRequest) returns (GetTopResponse);
+
+  // Inserta o actualiza el puntaje de un usuario
+  rpc Upsert (UpsertRequest) returns (UpsertResponse);
+}
+
+// Solicitud para obtener el top N
+message GetTopRequest {
+  int32 limit = 1;
+}
+
+// Entrada individual del leaderboard
+message LeaderboardEntry {
+  string id = 1;        // UUID del registro
+  string user_id = 2;   // ID del usuario
+  int32 score = 3;      // Puntaje acumulado
+  int32 position = 4;   // Posición dentro del ranking
+}
+
+// Respuesta con la lista de los mejores puntajes
+message GetTopResponse {
+  repeated LeaderboardEntry entries = 1;
+}
+
+// Solicitud para insertar/actualizar un puntaje
+message UpsertRequest {
+  string user_id = 1;
+  int32 score = 2;
+}
+
+// Respuesta tras insertar o actualizar
+message UpsertResponse {
+  bool ok = 1;
+}

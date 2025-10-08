@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package trailbox.common;
+
+option go_package = "trailbox/gen/common;common";
+
+// Identificadores comunes
+message UserId {
+  string id = 1;
+}
+
+message RouteId {
+  string id = 1;
+}
+
+// Healthcheck estándar gRPC
+message HealthCheckRequest {}
+message HealthCheckResponse {
+  string status = 1;
+}

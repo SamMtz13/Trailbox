@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package trailbox.notifications;
+
+option go_package = "trailbox/gen/notifications;notifications";
+
+import "common.proto";
+
+// Servicio de notificaciones
+service Notifications {
+  rpc GetNotifications(UserIdRequest) returns (NotificationsResponse);
+  rpc SendNotification(SendNotificationRequest) returns (Notification);
+}
+
+// Solicitud con el ID de usuario
+message UserIdRequest {
+  string user_id = 1;
+}
+
+// Mensaje individual de notificación
+message Notification {
+  string id = 1;
+  string user_id = 2;
+  string message = 3;
+  bool read = 4;
+  string created_at = 5;
+}
+
+// Respuesta con lista de notificaciones
+message NotificationsResponse {
+  repeated Notification notifications = 1;
+}
+
+// Solicitud para enviar una nueva notificación
+message SendNotificationRequest {
+  string user_id = 1;
+  string message = 2;
+}
