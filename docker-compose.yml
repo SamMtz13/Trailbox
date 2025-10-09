@@ -54,7 +54,7 @@ services:
       - DB_NAME=trailbox
     ports:
       - "8011:50051"   # gRPC externo
-      - "8111:8081"    # HTTP health externo (para debug opcional)
+      - "8111:8081"    # HTTP health externo 
     depends_on:
       consul:
         condition: service_healthy

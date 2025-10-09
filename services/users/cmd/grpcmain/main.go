@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -112,16 +113,31 @@ func main() {
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
 	// ===============================
-	// 4️⃣ Health HTTP server paralelo
+	// 4️⃣ HTTP Server: /health y /users
 	// ===============================
 	go func() {
-		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		mux := http.NewServeMux()
+
+		// Health check
+		mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintln(w, "OK - users")
 		})
-		log.Printf("[users] health HTTP server on :%d", healthHTTPPort)
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), nil); err != nil {
-			log.Fatalf("[users] health server error: %v", err)
+
+		// Nuevo endpoint: lista de usuarios en JSON
+		mux.HandleFunc("/users", func(w http.ResponseWriter, _ *http.Request) {
+			var users []model.User
+			if err := dbConn.Find(&users).Error; err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(users)
+		})
+
+		log.Printf("[users] 🌐 HTTP endpoints on :%d (/health, /users)", healthHTTPPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), mux); err != nil {
+			log.Fatalf("[users] HTTP server error: %v", err)
 		}
 	}()
 

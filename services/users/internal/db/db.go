@@ -1,38 +1,45 @@
 package db
 
 import (
-	"fmt"
 	"log"
-	"os"
+	"sync"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-func Connect() (*gorm.DB, error) {
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	user := os.Getenv("DB_USER")
-	pass := os.Getenv("DB_PASS")
-	name := os.Getenv("DB_NAME")
+var (
+	db   *gorm.DB
+	once sync.Once
+)
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=America/Mexico_City",
-		host, user, pass, name, port)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+func GetDB() *gorm.DB {
+	once.Do(func() {
+		var err error
+		db, err = Connect()
+		if err != nil {
+			log.Fatalf("❌ Could not connect to the database: %v", err)
+		}
 	})
+	return db
+}
+
+func Connect() (*gorm.DB, error) {
+	dsn := "host=postgres user=trailbox password=trailbox dbname=trailbox port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect DB: %v", err)
+		return nil, err
 	}
 
-	sqlDB, _ := db.DB()
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
 	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(50)
+	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	log.Println("[users] ✅ Connected to PostgreSQL")
 	return db, nil
 }
