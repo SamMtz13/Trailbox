@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -21,6 +23,11 @@ import (
 	lbdb "trailbox/services/leaderboard/internal/db"
 	lbconsul "trailbox/services/leaderboard/internal/discovery/consul"
 	lbrepo "trailbox/services/leaderboard/internal/repository/db"
+)
+
+const (
+	defaultPort    = "50051"
+	healthHTTPPort = 8081
 )
 
 type leaderboardServer struct {
@@ -52,8 +59,6 @@ func (s *leaderboardServer) Upsert(ctx context.Context, req *pb.UpsertRequest) (
 	return &pb.UpsertResponse{Ok: true}, nil
 }
 
-const defaultPort = "50051"
-
 func main() {
 	conn, err := lbdb.Connect()
 	if err != nil {
@@ -76,19 +81,30 @@ func main() {
 	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintln(w, "OK - leaderboard")
+		})
+		log.Printf("[leaderboard] HTTP health running on :%d", healthHTTPPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), nil); err != nil {
+			log.Printf("[leaderboard] health server error: %v", err)
+		}
+	}()
+
 	reg, err := lbconsul.NewRegistrar()
 	if err != nil {
 		log.Fatalf("[leaderboard] consul error: %v", err)
 	}
 	addr := getenvOr("SERVICE_ADDRESS", "leaderboard")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "leaderboard"), addr, mustAtoi(port), "/grpc.health.v1.Health/Check")
+	id, err := reg.Register(getenvOr("SERVICE_NAME", "leaderboard"), addr, healthHTTPPort, "/health")
 	if err != nil {
 		log.Fatalf("[leaderboard] consul register error: %v", err)
 	}
 	log.Printf("[leaderboard] registered in Consul as id=%s", id)
 
 	go func() {
-		log.Printf("[leaderboard] listening on :%s", port)
+		log.Printf("[leaderboard] 🚀 gRPC listening on :%s", port)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("[leaderboard] serve error: %v", err)
 		}

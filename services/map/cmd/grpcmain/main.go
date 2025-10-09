@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -21,6 +23,11 @@ import (
 	mapdb "trailbox/services/map/internal/db"
 	mapconsul "trailbox/services/map/internal/discovery/consul"
 	maprepo "trailbox/services/map/internal/repository/db"
+)
+
+const (
+	defaultPort    = "50051"
+	healthHTTPPort = 8081
 )
 
 type mapServer struct {
@@ -47,8 +54,6 @@ func (s *mapServer) SetRoute(ctx context.Context, req *pb.SetRouteRequest) (*pb.
 	return &pb.SetRouteResponse{Ok: true}, nil
 }
 
-const defaultPort = "50051"
-
 func main() {
 	conn, err := mapdb.Connect()
 	if err != nil {
@@ -71,19 +76,31 @@ func main() {
 	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
+	// HTTP health para Consul
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintln(w, "OK - map")
+		})
+		log.Printf("[map] HTTP health running on :%d", healthHTTPPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), nil); err != nil {
+			log.Printf("[map] health server error: %v", err)
+		}
+	}()
+
 	reg, err := mapconsul.NewRegistrar()
 	if err != nil {
 		log.Fatalf("[map] consul error: %v", err)
 	}
 	addr := getenvOr("SERVICE_ADDRESS", "map")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "map"), addr, mustAtoi(port), "/grpc.health.v1.Health/Check")
+	id, err := reg.Register(getenvOr("SERVICE_NAME", "map"), addr, healthHTTPPort, "/health")
 	if err != nil {
 		log.Fatalf("[map] consul register error: %v", err)
 	}
 	log.Printf("[map] registered in Consul as id=%s", id)
 
 	go func() {
-		log.Printf("[map] 🚀 listening on :%s", port)
+		log.Printf("[map] 🚀 gRPC listening on :%s", port)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("[map] serve error: %v", err)
 		}

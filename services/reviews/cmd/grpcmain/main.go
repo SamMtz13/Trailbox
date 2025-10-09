@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -16,17 +18,25 @@ import (
 
 	pb "trailbox/gen/reviews"
 	reviewsctrl "trailbox/services/reviews/internal/controller"
-	consulreg "trailbox/services/reviews/internal/discovery/consul"
-	reviewsdb "trailbox/services/reviews/internal/repository/db"
+	reviewsdb "trailbox/services/reviews/internal/db"
+	reviewconsul "trailbox/services/reviews/internal/discovery/consul"
+	"trailbox/services/reviews/internal/model"
+	reviewrepo "trailbox/services/reviews/internal/repository/db"
+
+	"github.com/joho/godotenv"
 )
 
-const defaultPort = "50051"
+const (
+	defaultPort    = "50051"
+	healthHTTPPort = 8081
+)
 
 type reviewServer struct {
 	pb.UnimplementedReviewsServer
 	ctrl *reviewsctrl.Controller
 }
 
+// 🔹 Obtener lista de reseñas
 func (s *reviewServer) GetReviews(ctx context.Context, req *pb.ReviewListRequest) (*pb.ReviewListResponse, error) {
 	revs, err := s.ctrl.ListReviews(req.RouteId)
 	if err != nil {
@@ -47,6 +57,7 @@ func (s *reviewServer) GetReviews(ctx context.Context, req *pb.ReviewListRequest
 	return resp, nil
 }
 
+// 🔹 Crear una reseña nueva
 func (s *reviewServer) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*pb.Review, error) {
 	r, err := s.ctrl.AddReview(req.UserId, req.RouteId, req.Comment, int(req.Rating))
 	if err != nil {
@@ -63,56 +74,90 @@ func (s *reviewServer) CreateReview(ctx context.Context, req *pb.CreateReviewReq
 }
 
 func main() {
-	port := getenvOr("PORT", defaultPort)
+	_ = godotenv.Load()
 
+	// 1️⃣ DB + migración
 	conn, err := reviewsdb.Connect()
 	if err != nil {
-		log.Fatalf("[reviews] DB error: %v", err)
+		log.Fatalf("[reviews] ❌ DB error: %v", err)
 	}
 
-	repo := reviewsdb.New(conn)
+	if err := conn.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`).Error; err != nil {
+		log.Fatalf("[reviews] ❌ UUID extension error: %v", err)
+	}
+
+	if err := conn.AutoMigrate(&model.Review{}); err != nil {
+		log.Fatalf("[reviews] ❌ migration error: %v", err)
+	}
+	log.Println("[reviews] ✅ Migración completada")
+
+	repo := reviewrepo.New(conn)
 	ctrl := reviewsctrl.NewController(repo)
 
+	// 2️⃣ Servidor gRPC
+	port := getenvOr("PORT", defaultPort)
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("[reviews] failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
-	pb.RegisterReviewsServer(s, &reviewServer{ctrl: ctrl})
+	grpcServer := grpc.NewServer()
+	pb.RegisterReviewsServer(grpcServer, &reviewServer{ctrl: ctrl})
 
+	// Health gRPC
 	hs := health.NewServer()
-	healthpb.RegisterHealthServer(s, hs)
+	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	reg, err := consulreg.NewRegistrar()
+	// 3️⃣ Health HTTP (para Consul)
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintln(w, "OK - reviews")
+		})
+		log.Printf("[reviews] health HTTP on :%d", healthHTTPPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), nil); err != nil {
+			log.Printf("[reviews] health HTTP error: %v", err)
+		}
+	}()
+
+	// 4️⃣ Registro en Consul
+	reg, err := reviewconsul.NewRegistrar()
 	if err != nil {
 		log.Fatalf("[reviews] consul init error: %v", err)
 	}
+
 	addr := getenvOr("SERVICE_ADDRESS", "reviews")
-	healthPath := getenvOr("SERVICE_HEALTH_PATH", "/grpc.health.v1.Health/Check")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "reviews"), addr, mustAtoi(port), healthPath)
+	id, err := reg.Register(getenvOr("SERVICE_NAME", "reviews"), addr, healthHTTPPort, "/health")
 	if err != nil {
 		log.Fatalf("[reviews] consul register error: %v", err)
 	}
 	log.Printf("[reviews] registered in consul id=%s", id)
 
+	// 5️⃣ Servidor principal
 	go func() {
-		log.Printf("[reviews] listening on :%s", port)
-		if err := s.Serve(lis); err != nil {
+		log.Printf("[reviews] 🚀 gRPC listening on :%s", port)
+		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("[reviews] server error: %v", err)
 		}
 	}()
 
+	// 6️⃣ Apagado elegante
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
+
 	log.Println("[reviews] shutting down...")
-	s.GracefulStop()
+	grpcServer.GracefulStop()
 	reg.Deregister()
-	log.Println("[reviews] shutdown complete")
+
+	sqlDB, _ := conn.DB()
+	_ = sqlDB.Close()
+
+	log.Println("[reviews] graceful shutdown complete")
 }
 
+// Helpers
 func getenvOr(k, def string) string {
 	if v := os.Getenv(k); v != "" {
 		return v

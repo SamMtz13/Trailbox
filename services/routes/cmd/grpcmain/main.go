@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -65,7 +67,10 @@ func (s *routeServer) ListRoutes(ctx context.Context, req *pb.ListRoutesRequest)
 	return resp, nil
 }
 
-const defaultPort = "8002"
+const (
+	defaultPort    = "50051"
+	healthHTTPPort = 8081
+)
 
 func main() {
 	_ = godotenv.Load()
@@ -113,14 +118,25 @@ func main() {
 	// ===============================
 	// 4️⃣ Registro en Consul
 	// ===============================
+
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("OK - routes"))
+		})
+		log.Printf("[routes] health HTTP server on :%d", healthHTTPPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), nil); err != nil {
+			log.Fatalf("[routes] health server error: %v", err)
+		}
+	}()
+
 	reg, err := consuldiscovery.NewRegistrar()
 	if err != nil {
 		log.Fatalf("[routes] consul init error: %v", err)
 	}
 
 	addr := getenvOr("SERVICE_ADDRESS", "routes")
-	healthPath := getenvOr("SERVICE_HEALTH_PATH", "/grpc.health.v1.Health/Check")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "routes"), addr, mustAtoi(port), healthPath)
+	id, err := reg.Register(getenvOr("SERVICE_NAME", "routes"), addr, healthHTTPPort, "/health")
 	if err != nil {
 		log.Fatalf("[routes] consul register error: %v", err)
 	}

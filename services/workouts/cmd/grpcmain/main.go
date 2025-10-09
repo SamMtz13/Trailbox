@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -26,6 +28,11 @@ import (
 	wrepo "trailbox/services/workouts/internal/repository/db"
 
 	"github.com/joho/godotenv"
+)
+
+const (
+	defaultPort    = "50051"
+	healthHTTPPort = 8081
 )
 
 type workoutServer struct {
@@ -69,14 +76,10 @@ func (s *workoutServer) ListWorkouts(ctx context.Context, req *pb.ListWorkoutsRe
 	return resp, nil
 }
 
-const defaultPort = "50051"
-
 func main() {
 	_ = godotenv.Load()
 
-	// ===============================
 	// 1️⃣ Conexión DB + migración
-	// ===============================
 	conn, err := db.Connect()
 	if err != nil {
 		log.Fatalf("[workouts] ❌ DB connection error: %v", err)
@@ -91,15 +94,10 @@ func main() {
 	}
 	log.Println("[workouts] ✅ Migración completada")
 
-	// ===============================
-	// 2️⃣ Repo + controller
-	// ===============================
 	repo := wrepo.New(conn)
 	ctrl := wctrl.NewController(repo)
 
-	// ===============================
-	// 3️⃣ Servidor gRPC
-	// ===============================
+	// 2️⃣ Servidor gRPC
 	port := getenvOr("PORT", defaultPort)
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
@@ -114,25 +112,32 @@ func main() {
 	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	// ===============================
+	// 3️⃣ Health HTTP adicional (para Consul)
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("OK - workouts"))
+		})
+		log.Printf("[workouts] health HTTP listening on :%d", healthHTTPPort)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), nil); err != nil {
+			log.Printf("[workouts] health server error: %v", err)
+		}
+	}()
+
 	// 4️⃣ Registro en Consul
-	// ===============================
 	reg, err := wconsul.NewRegistrar()
 	if err != nil {
 		log.Fatalf("[workouts] consul init error: %v", err)
 	}
 
 	addr := getenvOr("SERVICE_ADDRESS", "workouts")
-	healthPath := getenvOr("SERVICE_HEALTH_PATH", "/grpc.health.v1.Health/Check")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "workouts"), addr, mustAtoi(port), healthPath)
+	id, err := reg.Register(getenvOr("SERVICE_NAME", "workouts"), addr, healthHTTPPort, "/health")
 	if err != nil {
 		log.Fatalf("[workouts] consul register error: %v", err)
 	}
 	log.Printf("[workouts] consul registered id=%s", id)
 
-	// ===============================
 	// 5️⃣ Arranque del servidor
-	// ===============================
 	go func() {
 		log.Printf("[workouts] 🚀 gRPC listening on :%s", port)
 		if err := grpcServer.Serve(lis); err != nil {
@@ -140,9 +145,7 @@ func main() {
 		}
 	}()
 
-	// ===============================
 	// 6️⃣ Apagado elegante
-	// ===============================
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
@@ -150,9 +153,14 @@ func main() {
 	log.Println("[workouts] shutting down...")
 	grpcServer.GracefulStop()
 	reg.Deregister()
+
+	sqlDB, _ := conn.DB()
+	_ = sqlDB.Close()
+
 	log.Println("[workouts] graceful shutdown complete")
 }
 
+// Helpers
 func getenvOr(k, def string) string {
 	if v := os.Getenv(k); v != "" {
 		return v
