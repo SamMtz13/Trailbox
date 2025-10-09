@@ -1,4 +1,4 @@
-# Módulo Go (de tu go.mod). Ajusta si tu módulo NO es "trailbox".
+
 MODULE = trailbox
 PROTO_DIR = proto
 GEN_ROOT = gen

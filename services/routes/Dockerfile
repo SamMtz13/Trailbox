@@ -6,7 +6,6 @@ RUN go mod download
 
 COPY . .
 
-# ✅ Compila desde la ruta completa del proyecto
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./services/routes/cmd/grpcmain
 
 FROM gcr.io/distroless/static-debian12
