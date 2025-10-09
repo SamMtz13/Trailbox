@@ -24,6 +24,8 @@ services:
       - POSTGRES_DB=trailbox
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U trailbox -d trailbox"]
       interval: 5s
