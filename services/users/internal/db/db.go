@@ -1,11 +1,11 @@
 package db
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
-	"os"
-	"fmt"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,7 +28,7 @@ func GetDB() *gorm.DB {
 }
 
 func Connect() (*gorm.DB, error) {
-	host := getenvOr("DB_HOST", "postgres.final-project.svc.cluster.local")
+	host := getenvOr("DB_HOST", "postgres.default.svc.cluster.local")
 	user := getenvOr("DB_USER", "trailbox")
 	pass := getenvOr("DB_PASS", "trailbox")
 	name := getenvOr("DB_NAME", "trailbox")

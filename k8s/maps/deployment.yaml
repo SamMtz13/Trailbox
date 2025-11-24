@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maps
-  namespace: final-project
   labels:
     app: maps
 spec:
@@ -17,18 +16,16 @@ spec:
     spec:
       containers:
         - name: maps
-          image: trailbox/maps:latest
+          image: trailbox/map:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50051
               name: grpc
-            - containerPort: 8081
-              name: health
           env:
             - name: PORT
               value: "50051"
             - name: DB_HOST
-              value: postgres.final-project.svc.cluster.local
+              value: postgres.default.svc.cluster.local
             - name: DB_PORT
               value: "5432"
             - name: DB_USER
@@ -47,15 +44,13 @@ spec:
                   name: trailbox-db-secret
                   key: MAPS_DB_NAME
           livenessProbe:
-            httpGet:
-              path: /health
-              port: 8081
+            tcpSocket:
+              port: 50051
             initialDelaySeconds: 10
             periodSeconds: 15
           readinessProbe:
-            httpGet:
-              path: /health
-              port: 8081
+            tcpSocket:
+              port: 50051
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:

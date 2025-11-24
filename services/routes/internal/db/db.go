@@ -12,7 +12,7 @@ import (
 )
 
 func Connect() (*gorm.DB, error) {
-	host := getenvOr("DB_HOST", "postgres.final-project.svc.cluster.local")
+	host := getenvOr("DB_HOST", "postgres.default.svc.cluster.local")
 	port := getenvOr("DB_PORT", "5432")
 	user := getenvOr("DB_USER", "trailbox")
 	pass := getenvOr("DB_PASS", "trailbox")

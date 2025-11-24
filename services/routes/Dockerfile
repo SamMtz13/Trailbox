@@ -10,7 +10,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./services/ro
 
 FROM gcr.io/distroless/static-debian12
 COPY --from=builder /service /service
-COPY services/routes/.env /.env
 
 EXPOSE 50051
 ENTRYPOINT ["/service"]

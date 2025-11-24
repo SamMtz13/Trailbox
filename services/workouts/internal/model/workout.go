@@ -34,3 +34,9 @@ type Workout struct {
 	RouteID   uuid.UUID   `gorm:"type:uuid;not null"`
 	CreatedAt time.Time   `gorm:"autoCreateTime"`
 }
+
+// TableName overrides the default singular table name so it matches the
+// schema created via the bootstrap SQL.
+func (Workout) TableName() string {
+	return "workouts"
+}

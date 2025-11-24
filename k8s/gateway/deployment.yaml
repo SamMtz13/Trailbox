@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gateway
-  namespace: final-project
   labels:
     app: gateway
 spec:
@@ -26,19 +25,19 @@ spec:
             - name: PORT
               value: "8080"
             - name: USERS_SERVICE_ADDR
-              value: users.final-project.svc.cluster.local:50051
+              value: users.default.svc.cluster.local:50051
             - name: ROUTES_SERVICE_ADDR
-              value: routes.final-project.svc.cluster.local:50051
+              value: routes.default.svc.cluster.local:50051
             - name: WORKOUTS_SERVICE_ADDR
-              value: workouts.final-project.svc.cluster.local:50051
+              value: workouts.default.svc.cluster.local:50051
             - name: REVIEWS_SERVICE_ADDR
-              value: reviews.final-project.svc.cluster.local:50051
+              value: reviews.default.svc.cluster.local:50051
             - name: LEADERBOARD_SERVICE_ADDR
-              value: leaderboard.final-project.svc.cluster.local:50051
+              value: leaderboard.default.svc.cluster.local:50051
             - name: NOTIFICATIONS_SERVICE_ADDR
-              value: notifications.final-project.svc.cluster.local:50051
+              value: notifications.default.svc.cluster.local:50051
             - name: MAPS_SERVICE_ADDR
-              value: maps.final-project.svc.cluster.local:50051
+              value: maps.default.svc.cluster.local:50051
           livenessProbe:
             httpGet:
               path: /health

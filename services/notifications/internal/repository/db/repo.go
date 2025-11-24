@@ -35,10 +35,6 @@ func Connect() (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect DB: %w", err)
 	}
 
-	if err := db.AutoMigrate(&model.Notification{}); err != nil {
-		return nil, fmt.Errorf("auto migrate failed: %w", err)
-	}
-
 	log.Println("[notifications] ✅ Connected to PostgreSQL")
 	return db, nil
 }

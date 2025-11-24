@@ -6,7 +6,7 @@ RUN npm install
 
 COPY . .
 
-ARG VITE_API_BASE_URL=http://gateway.final-project.svc.cluster.local:8080
+ARG VITE_API_BASE_URL=http://gateway.default.svc.cluster.local:8080
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 RUN npm run build

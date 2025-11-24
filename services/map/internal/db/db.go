@@ -5,14 +5,12 @@ import (
 	"log"
 	"os"
 
-	"trailbox/services/map/internal/model"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func Connect() (*gorm.DB, error) {
-	host := getenvOr("DB_HOST", "postgres.final-project.svc.cluster.local")
+	host := getenvOr("DB_HOST", "postgres.default.svc.cluster.local")
 	user := getenvOr("DB_USER", "trailbox")
 	pass := getenvOr("DB_PASS", "trailbox")
 	name := getenvOr("DB_NAME", "trailbox")
@@ -27,13 +25,6 @@ func Connect() (*gorm.DB, error) {
 	}
 
 	log.Println("[map] ✅ Connected to PostgreSQL")
-
-	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`).Error; err != nil {
-		log.Printf("[map] ⚠️ could not ensure uuid-ossp: %v", err)
-	}
-	if err := db.AutoMigrate(&model.Map{}); err != nil {
-		return nil, fmt.Errorf("migration failed: %w", err)
-	}
 
 	log.Println("[map] ✅ Migration complete")
 	return db, nil

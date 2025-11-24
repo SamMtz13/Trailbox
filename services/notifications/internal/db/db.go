@@ -16,7 +16,7 @@ type Repository struct {
 }
 
 func Connect() (*gorm.DB, error) {
-	host := getenvOr("DB_HOST", "postgres.final-project.svc.cluster.local")
+	host := getenvOr("DB_HOST", "postgres.default.svc.cluster.local")
 	user := getenvOr("DB_USER", "trailbox")
 	pass := getenvOr("DB_PASS", "trailbox")
 	name := getenvOr("DB_NAME", "trailbox")
@@ -28,10 +28,6 @@ func Connect() (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect DB: %w", err)
-	}
-
-	if err := db.AutoMigrate(&model.Notification{}); err != nil {
-		return nil, fmt.Errorf("auto migrate failed: %w", err)
 	}
 
 	log.Println("[notifications] ✅ Connected to PostgreSQL")

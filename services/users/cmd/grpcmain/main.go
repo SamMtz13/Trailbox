@@ -1,77 +1,27 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	health "google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
-	commonpb "trailbox/gen/common"
 	pb "trailbox/gen/users"
 
 	userctrl "trailbox/services/users/internal/controller/users"
 	"trailbox/services/users/internal/db"
-	"trailbox/services/users/internal/model"
+	usergrpc "trailbox/services/users/internal/handler/grpc"
 	userrepo "trailbox/services/users/internal/repository/db"
-
-	"github.com/joho/godotenv"
 )
 
-type userServer struct {
-	pb.UnimplementedUsersServer
-	ctrl *userctrl.Controller
-}
-
-// 🔹 Métodos gRPC
-func (s *userServer) GetUser(ctx context.Context, req *commonpb.UserId) (*pb.User, error) {
-	user, err := s.ctrl.GetUser(req.Id)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, "user not found")
-	}
-	return &pb.User{
-		Id:    user.ID.String(),
-		Name:  user.Name,
-		Email: user.Email,
-	}, nil
-}
-
-func (s *userServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	users, err := s.ctrl.ListUsers()
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to list users")
-	}
-	resp := &pb.ListUsersResponse{}
-	for _, u := range users {
-		resp.Users = append(resp.Users, &pb.User{
-			Id:    u.ID.String(),
-			Name:  u.Name,
-			Email: u.Email,
-		})
-	}
-	return resp, nil
-}
-
-const (
-	defaultPort    = "50051"
-	healthHTTPPort = 8081
-)
+const defaultPort = "50051"
 
 func main() {
-	_ = godotenv.Load()
-
 	// ===============================
 	// 1️⃣ Conexión a PostgreSQL
 	// ===============================
@@ -81,12 +31,6 @@ func main() {
 	}
 
 	// Extensión y migración
-	if err := dbConn.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`).Error; err != nil {
-		log.Fatalf("[users] ❌ error creando extensión uuid-ossp: %v", err)
-	}
-	if err := dbConn.AutoMigrate(&model.User{}); err != nil {
-		log.Fatalf("[users] ❌ error migrando modelo users: %v", err)
-	}
 	log.Println("[users] ✅ Migración completada")
 
 	// ===============================
@@ -104,7 +48,7 @@ func main() {
 		log.Fatalf("[users] failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterUsersServer(grpcServer, &userServer{ctrl: ctrl})
+	pb.RegisterUsersServer(grpcServer, usergrpc.New(ctrl))
 
 	// Health gRPC interno
 	hs := health.NewServer()
@@ -112,41 +56,7 @@ func main() {
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
 	// ===============================
-	// 4️⃣ HTTP Server: /health y /users
-	// ===============================
-	go func() {
-		mux := http.NewServeMux()
-
-		// Health check
-		mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, "OK - users")
-		})
-
-		// Nuevo endpoint: lista de usuarios en JSON
-		mux.HandleFunc("/users", func(w http.ResponseWriter, _ *http.Request) {
-			var users []model.User
-			if err := dbConn.Find(&users).Error; err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(users)
-		})
-
-		log.Printf("[users] 🌐 HTTP endpoints on :%d (/health, /users)", healthHTTPPort)
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), mux); err != nil {
-			log.Fatalf("[users] HTTP server error: %v", err)
-		}
-	}()
-
-	// ===============================
-	// 5️⃣ Readiness log (health HTTP already running)
-	// ===============================
-	log.Printf("[users] readiness HTTP on :%d", healthHTTPPort)
-
-	// ===============================
-	// 6️⃣ Servidor gRPC principal
+	// 4️⃣ Servidor gRPC principal
 	// ===============================
 	go func() {
 		log.Printf("[users] 🚀 gRPC server listening on :%s", port)
@@ -173,9 +83,4 @@ func getenvOr(k, def string) string {
 		return v
 	}
 	return def
-}
-
-func mustAtoi(s string) int {
-	n, _ := strconv.Atoi(s)
-	return n
 }

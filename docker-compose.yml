@@ -21,7 +21,7 @@ services:
     networks:
       default:
         aliases:
-          - postgres.final-project.svc.cluster.local
+          - postgres.default.svc.cluster.local
 
   # =======================
   # USERS (gRPC + health HTTP)
@@ -33,7 +33,7 @@ services:
     container_name: trailbox-users
     environment:
       - PORT=50051
-      - DB_HOST=postgres.final-project.svc.cluster.local
+      - DB_HOST=postgres.default.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -48,7 +48,7 @@ services:
     networks:
       default:
         aliases:
-          - users.final-project.svc.cluster.local
+          - users.default.svc.cluster.local
 
   # =======================
   # ROUTES (gRPC + health HTTP)
@@ -60,7 +60,7 @@ services:
     container_name: trailbox-routes
     environment:
       - PORT=50051
-      - DB_HOST=postgres.final-project.svc.cluster.local
+      - DB_HOST=postgres.default.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -74,7 +74,7 @@ services:
     networks:
       default:
         aliases:
-          - routes.final-project.svc.cluster.local
+          - routes.default.svc.cluster.local
 
   # =======================
   # WORKOUTS (gRPC + health HTTP)
@@ -86,7 +86,7 @@ services:
     container_name: trailbox-workouts
     environment:
       - PORT=50051
-      - DB_HOST=postgres.final-project.svc.cluster.local
+      - DB_HOST=postgres.default.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -101,7 +101,7 @@ services:
     networks:
       default:
         aliases:
-          - workouts.final-project.svc.cluster.local
+          - workouts.default.svc.cluster.local
 
   # =======================
   # REVIEWS (gRPC + health HTTP)
@@ -113,7 +113,7 @@ services:
     container_name: trailbox-reviews
     environment:
       - PORT=50051
-      - DB_HOST=postgres.final-project.svc.cluster.local
+      - DB_HOST=postgres.default.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -127,7 +127,7 @@ services:
     networks:
       default:
         aliases:
-          - reviews.final-project.svc.cluster.local
+          - reviews.default.svc.cluster.local
 
   # =======================
   # NOTIFICATIONS (gRPC + health HTTP)
@@ -139,7 +139,7 @@ services:
     container_name: trailbox-notifications
     environment:
       - PORT=50051
-      - DB_HOST=postgres.final-project.svc.cluster.local
+      - DB_HOST=postgres.default.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -153,7 +153,7 @@ services:
     networks:
       default:
         aliases:
-          - notifications.final-project.svc.cluster.local
+          - notifications.default.svc.cluster.local
 
   # =======================
   # MAPS (gRPC + health HTTP)
@@ -165,7 +165,7 @@ services:
     container_name: trailbox-maps
     environment:
       - PORT=50051
-      - DB_HOST=postgres.final-project.svc.cluster.local
+      - DB_HOST=postgres.default.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -180,7 +180,7 @@ services:
     networks:
       default:
         aliases:
-          - maps.final-project.svc.cluster.local
+          - maps.default.svc.cluster.local
 
   # =======================
   # LEADERBOARD (gRPC + health HTTP)
@@ -192,7 +192,7 @@ services:
     container_name: trailbox-leaderboard
     environment:
       - PORT=50051
-      - DB_HOST=postgres.final-project.svc.cluster.local
+      - DB_HOST=postgres.default.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -207,7 +207,7 @@ services:
     networks:
       default:
         aliases:
-          - leaderboard.final-project.svc.cluster.local
+          - leaderboard.default.svc.cluster.local
 
   # =======================
   # GATEWAY (HTTP)
@@ -219,13 +219,13 @@ services:
     container_name: trailbox-gateway
     environment:
       - PORT=8080
-      - USERS_SERVICE_ADDR=users.final-project.svc.cluster.local:50051
-      - ROUTES_SERVICE_ADDR=routes.final-project.svc.cluster.local:50051
-      - WORKOUTS_SERVICE_ADDR=workouts.final-project.svc.cluster.local:50051
-      - REVIEWS_SERVICE_ADDR=reviews.final-project.svc.cluster.local:50051
-      - LEADERBOARD_SERVICE_ADDR=leaderboard.final-project.svc.cluster.local:50051
-      - NOTIFICATIONS_SERVICE_ADDR=notifications.final-project.svc.cluster.local:50051
-      - MAPS_SERVICE_ADDR=maps.final-project.svc.cluster.local:50051
+      - USERS_SERVICE_ADDR=users.default.svc.cluster.local:50051
+      - ROUTES_SERVICE_ADDR=routes.default.svc.cluster.local:50051
+      - WORKOUTS_SERVICE_ADDR=workouts.default.svc.cluster.local:50051
+      - REVIEWS_SERVICE_ADDR=reviews.default.svc.cluster.local:50051
+      - LEADERBOARD_SERVICE_ADDR=leaderboard.default.svc.cluster.local:50051
+      - NOTIFICATIONS_SERVICE_ADDR=notifications.default.svc.cluster.local:50051
+      - MAPS_SERVICE_ADDR=maps.default.svc.cluster.local:50051
     ports:
       - "8080:8080"
     depends_on:
@@ -247,7 +247,7 @@ services:
     networks:
       default:
         aliases:
-          - gateway.final-project.svc.cluster.local
+          - gateway.default.svc.cluster.local
 
   # =======================
   # MIGRATOR
@@ -263,14 +263,14 @@ services:
       - ./services/workouts/internal/migrations:/migrations/workouts
     entrypoint: [
       "sh", "-c",
-      "migrate -path=/migrations/users -database postgres://trailbox:trailbox@postgres.final-project.svc.cluster.local:5432/trailbox?sslmode=disable up && \
-       migrate -path=/migrations/routes -database postgres://trailbox:trailbox@postgres.final-project.svc.cluster.local:5432/trailbox?sslmode=disable up && \
-       migrate -path=/migrations/workouts -database postgres://trailbox:trailbox@postgres.final-project.svc.cluster.local:5432/trailbox?sslmode=disable up"
+      "migrate -path=/migrations/users -database postgres://trailbox:trailbox@postgres.default.svc.cluster.local:5432/trailbox?sslmode=disable up && \
+       migrate -path=/migrations/routes -database postgres://trailbox:trailbox@postgres.default.svc.cluster.local:5432/trailbox?sslmode=disable up && \
+       migrate -path=/migrations/workouts -database postgres://trailbox:trailbox@postgres.default.svc.cluster.local:5432/trailbox?sslmode=disable up"
     ]
     networks:
       default:
         aliases:
-          - migrator.final-project.svc.cluster.local
+          - migrator.default.svc.cluster.local
 
 volumes:
   pgdata: {}

@@ -2,20 +2,20 @@
 
 ## Arquitectura y componentes
 - **Gateway (public entrypoint)**: expone `/api/*` vía HTTP y traduce hacia gRPC de cada dominio. Único recurso `Service` tipo `LoadBalancer`.
-- **Usuarios**: CRUD básico de usuarios y consulta de listas. gRPC accesible en `users.final-project.svc.cluster.local:50051`.
-- **Rutas**: catálogo de rutas (distancia, desnivel, autor). gRPC en `routes.final-project.svc.cluster.local:50051`.
-- **Entrenamientos**: historial de workouts con duración/calorías. gRPC en `workouts.final-project.svc.cluster.local:50051`.
-- **Reseñas**: reseñas por ruta (rating y comentario). gRPC en `reviews.final-project.svc.cluster.local:50051`.
-- **Leaderboard**: ranking de usuarios y puntajes. gRPC en `leaderboard.final-project.svc.cluster.local:50051`.
-- **Notificaciones**: mensajes por usuario. gRPC en `notifications.final-project.svc.cluster.local:50051`.
-- **Mapas**: almacena GeoJSON por ruta. gRPC en `maps.final-project.svc.cluster.local:50051`.
+- **Usuarios**: CRUD básico de usuarios y consulta de listas. gRPC accesible en `users.default.svc.cluster.local:50051`.
+- **Rutas**: catálogo de rutas (distancia, desnivel, autor). gRPC en `routes.default.svc.cluster.local:50051`.
+- **Entrenamientos**: historial de workouts con duración/calorías. gRPC en `workouts.default.svc.cluster.local:50051`.
+- **Reseñas**: reseñas por ruta (rating y comentario). gRPC en `reviews.default.svc.cluster.local:50051`.
+- **Leaderboard**: ranking de usuarios y puntajes. gRPC en `leaderboard.default.svc.cluster.local:50051`.
+- **Notificaciones**: mensajes por usuario. gRPC en `notifications.default.svc.cluster.local:50051`.
+- **Mapas**: almacena GeoJSON por ruta. gRPC en `maps.default.svc.cluster.local:50051`.
 - **PostgreSQL**: base de datos compartida, expuesta solo como `ClusterIP`.
 - **Frontend Svelte**: SPA estática servida por Nginx (Service `ClusterIP`), consume el gateway.
 
 Todos los flujos de inter-servicio pasan por el gateway; no hay llamadas directas entre servicios de dominio.
 
 ## Base de datos
-- **DNS de conexión**: `postgres.final-project.svc.cluster.local`, puerto `5432`.
+- **DNS de conexión**: `postgres.default.svc.cluster.local`, puerto `5432`.
 - **Bootstrap**: ConfigMap `postgres-bootstrap` (montado en el Deployment) contiene `01-schema.sql` y `02-seed.sql`. Cada arranque ejecuta ambos scripts vía `postStart` para recrear las bases `users_db`, `routes_db`, `workouts_db`, `reviews_db`, `notifications_db`, `leaderboard_db`, `maps_db`, crear sus roles (`*_app`) y sembrar datos de `data/`.
 - **Almacenamiento**: sin PVC; el pod usa `emptyDir` para `/var/lib/postgresql/data`, por lo que el contenido se repuebla en cada reinicio (ideal para demos).
 - **Credenciales**: secret `trailbox-db-secret` mantiene el superuser (`DB_*`) y pares específicos por servicio (`USERS_DB_*`, `ROUTES_DB_*`, etc.) que se inyectan en cada Deployment.
@@ -29,16 +29,15 @@ Todos los flujos de inter-servicio pasan por el gateway; no hay llamadas directa
   - `maps_db.maps`: id (uuid), route_id, geojson, created_at.
 
 ## Manifiestos Kubernetes (`k8s/`)
-- `namespace/namespace.yaml`: crea el namespace `final-project`.
 - `postgres/`: agrupa `secret.yaml`, `deployment.yaml`, `service.yaml` y `configmap.yaml` (SQL bootstrap) para la base de datos (sin PVC, datos efímeros).
-- `users/`, `routes/`, `workouts/`, `reviews/`, `notifications/`, `maps/`, `leaderboard/`: cada carpeta contiene `deployment.yaml` y `service.yaml` (gRPC ClusterIP, probes HTTP `/health` en 8081, recursos ~150m CPU / 192Mi RAM).
+- `users/`, `routes/`, `workouts/`, `reviews/`, `notifications/`, `maps/`, `leaderboard/`: cada carpeta contiene `deployment.yaml` y `service.yaml` (gRPC ClusterIP, probes TCP al puerto 50051, recursos ~150m CPU / 192Mi RAM).
 - `gateway/`: `deployment.yaml` + `service.yaml` (LoadBalancer puerto 8080). Las variables apuntan a los DNS de cada servicio interno.
 - `frontend/`: `deployment.yaml` + `service.yaml` (ClusterIP puerto 80; se expone vía port-forward/Ingress según el clúster).
 
 ## Exposición de servicios
-- **Público**: solo el gateway (`gateway` Service tipo `LoadBalancer`, puerto 8080). Endpoint interno esperado: `http://gateway.final-project.svc.cluster.local:8080`.
+- **Público**: solo el gateway (`gateway` Service tipo `LoadBalancer`, puerto 8080). Endpoint interno esperado: `http://gateway.default.svc.cluster.local:8080`.
 - **Interno (ClusterIP)**: usuarios, rutas, workouts, reviews, leaderboard, notifications, maps y PostgreSQL.
-- **Frontend**: ClusterIP (recom.: `kubectl port-forward svc/frontend -n final-project 4173:80` o publicar con un Ingress separado si el entorno lo permite).
+- **Frontend**: ClusterIP (recom.: `kubectl port-forward svc/frontend 4173:80` o publicar con un Ingress separado si el entorno lo permite).
 
 ## Capacidad y recursos
 - Réplicas: 1 por Deployment (gateway, frontend y cada microservicio de dominio).
@@ -52,5 +51,5 @@ Todos los flujos de inter-servicio pasan por el gateway; no hay llamadas directa
 
 ## Frontend
 - Svelte 5 + Vite + Tailwind, servido por Nginx.
-- Configurable con `VITE_API_BASE_URL` (ej. `http://gateway.final-project.svc.cluster.local:8080`).
+- Configurable con `VITE_API_BASE_URL` (ej. `http://gateway.default.svc.cluster.local:8080`).
 - Rutas: `/` (home), `/users`, `/routes`, `/workouts`, `/reviews`, `/leaderboard`, `/notifications`, `/maps`; cada página invoca `/api/*` en el gateway.

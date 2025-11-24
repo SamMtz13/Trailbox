@@ -13,3 +13,8 @@ type Leaderboard struct {
 	Position  int       `gorm:"not null;default:0"` // puedes calcularla al consultar
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
+
+// TableName ensures GORM matches the SQL bootstrap table.
+func (Leaderboard) TableName() string {
+	return "leaderboard"
+}

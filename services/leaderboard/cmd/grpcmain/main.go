@@ -1,62 +1,25 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	health "google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/status"
 
 	pb "trailbox/gen/leaderboard"
 
 	lbctrl "trailbox/services/leaderboard/internal/controller"
 	lbdb "trailbox/services/leaderboard/internal/db"
+	lbgrpc "trailbox/services/leaderboard/internal/handler/grpc"
 	lbrepo "trailbox/services/leaderboard/internal/repository/db"
 )
 
-const (
-	defaultPort    = "50051"
-	healthHTTPPort = 8081
-)
-
-type leaderboardServer struct {
-	pb.UnimplementedLeaderboardServer
-	ctrl *lbctrl.Controller
-}
-
-func (s *leaderboardServer) GetTop(ctx context.Context, req *pb.GetTopRequest) (*pb.GetTopResponse, error) {
-	rows, err := s.ctrl.GetTop(int(req.Limit))
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get top")
-	}
-	resp := &pb.GetTopResponse{}
-	for _, r := range rows {
-		resp.Entries = append(resp.Entries, &pb.LeaderboardEntry{
-			Id:       r.ID.String(),
-			UserId:   r.UserID.String(),
-			Score:    int32(r.Score),
-			Position: int32(r.Position),
-		})
-	}
-	return resp, nil
-}
-
-func (s *leaderboardServer) Upsert(ctx context.Context, req *pb.UpsertRequest) (*pb.UpsertResponse, error) {
-	if err := s.ctrl.Upsert(req.UserId, int(req.Score)); err != nil {
-		return nil, status.Error(codes.Internal, "failed to upsert score")
-	}
-	return &pb.UpsertResponse{Ok: true}, nil
-}
+const defaultPort = "50051"
 
 func main() {
 	conn, err := lbdb.Connect()
@@ -74,24 +37,11 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	pb.RegisterLeaderboardServer(grpcServer, &leaderboardServer{ctrl: ctrl})
+	pb.RegisterLeaderboardServer(grpcServer, lbgrpc.New(ctrl))
 
 	hs := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
-
-	go func() {
-		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, "OK - leaderboard")
-		})
-		log.Printf("[leaderboard] HTTP health running on :%d", healthHTTPPort)
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", healthHTTPPort), nil); err != nil {
-			log.Printf("[leaderboard] health server error: %v", err)
-		}
-	}()
-
-	log.Printf("[leaderboard] readiness HTTP on :%d", healthHTTPPort)
 
 	go func() {
 		log.Printf("[leaderboard] 🚀 gRPC listening on :%s", port)
@@ -115,4 +65,3 @@ func getenvOr(k, def string) string {
 	}
 	return def
 }
-func mustAtoi(s string) int { n, _ := strconv.Atoi(s); return n }
