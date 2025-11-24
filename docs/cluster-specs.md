@@ -16,19 +16,21 @@ Todos los flujos de inter-servicio pasan por el gateway; no hay llamadas directa
 
 ## Base de datos
 - **DNS de conexión**: `postgres.final-project.svc.cluster.local`, puerto `5432`.
-- **Credenciales**: secret `trailbox-db-secret` (`DB_USER`, `DB_PASS`, `DB_NAME`).
-- **Esquema principal** (tablas por servicio):
-  - `users`: id (uuid), name, age, email (único), created_at.
-  - `routes`: id (uuid), path, duration, distance, user_id, created_at.
-  - `workout`: id (uuid), name, exercises (jsonb), duration, calories, date, user_id, route_id, created_at.
-  - `reviews`: id (uuid), user_id, route_id, rating, comment, created_at.
-  - `notifications`: id (uuid), user_id, message, read, created_at.
-  - `leaderboard`: id (uuid), user_id, score, position, created_at.
-  - `maps`: id (uuid), route_id, geojson, created_at.
+- **Bootstrap**: ConfigMap `postgres-bootstrap` (montado en el Deployment) contiene `01-schema.sql` y `02-seed.sql`. Cada arranque ejecuta ambos scripts vía `postStart` para recrear las bases `users_db`, `routes_db`, `workouts_db`, `reviews_db`, `notifications_db`, `leaderboard_db`, `maps_db`, crear sus roles (`*_app`) y sembrar datos de `data/`.
+- **Almacenamiento**: sin PVC; el pod usa `emptyDir` para `/var/lib/postgresql/data`, por lo que el contenido se repuebla en cada reinicio (ideal para demos).
+- **Credenciales**: secret `trailbox-db-secret` mantiene el superuser (`DB_*`) y pares específicos por servicio (`USERS_DB_*`, `ROUTES_DB_*`, etc.) que se inyectan en cada Deployment.
+- **Tablas**:
+  - `users_db.users`: id (uuid), name, age, email (único), created_at.
+  - `routes_db.routes`: id (uuid), path, duration, distance, user_id, created_at.
+  - `workouts_db.workouts`: id (uuid), name, exercises (jsonb), duration, calories, date, user_id, route_id, created_at.
+  - `reviews_db.reviews`: id (uuid), user_id, route_id, rating, comment, created_at.
+  - `notifications_db.notifications`: id (uuid), user_id, message, read, created_at.
+  - `leaderboard_db.leaderboard`: id (uuid), user_id, score, position, created_at.
+  - `maps_db.maps`: id (uuid), route_id, geojson, created_at.
 
 ## Manifiestos Kubernetes (`k8s/`)
 - `namespace/namespace.yaml`: crea el namespace `final-project`.
-- `postgres/`: agrupa `secret.yaml`, `pvc.yaml`, `statefulset.yaml` y `service.yaml` para la base de datos.
+- `postgres/`: agrupa `secret.yaml`, `deployment.yaml`, `service.yaml` y `configmap.yaml` (SQL bootstrap) para la base de datos (sin PVC, datos efímeros).
 - `users/`, `routes/`, `workouts/`, `reviews/`, `notifications/`, `maps/`, `leaderboard/`: cada carpeta contiene `deployment.yaml` y `service.yaml` (gRPC ClusterIP, probes HTTP `/health` en 8081, recursos ~150m CPU / 192Mi RAM).
 - `gateway/`: `deployment.yaml` + `service.yaml` (LoadBalancer puerto 8080). Las variables apuntan a los DNS de cada servicio interno.
 - `frontend/`: `deployment.yaml` + `service.yaml` (ClusterIP puerto 80; se expone vía port-forward/Ingress según el clúster).

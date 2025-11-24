@@ -1,12 +1,11 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: postgres
   namespace: final-project
   labels:
     app: postgres
 spec:
-  serviceName: postgres
   replicas: 1
   selector:
     matchLabels:
@@ -20,6 +19,20 @@ spec:
         - name: postgres
           image: postgres:16
           imagePullPolicy: IfNotPresent
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    set -euo pipefail
+                    export PGPASSWORD="$POSTGRES_PASSWORD"
+                    until pg_isready -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER"; do
+                      sleep 2
+                    done
+                    psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -f /bootstrap/01-schema.sql
+                    psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -f /bootstrap/02-seed.sql
           ports:
             - containerPort: 5432
               name: postgres
@@ -42,6 +55,8 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+            - name: bootstrap-sql
+              mountPath: /bootstrap
           resources:
             requests:
               cpu: 100m
@@ -64,5 +79,7 @@ spec:
             periodSeconds: 10
       volumes:
         - name: postgres-data
-          persistentVolumeClaim:
-            claimName: postgres-pvc
+          emptyDir: {}
+        - name: bootstrap-sql
+          configMap:
+            name: postgres-bootstrap
