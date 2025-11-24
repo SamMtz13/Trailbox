@@ -1,1 +1,15 @@
-gen/
+/gen/
+
+# Go build/test caches
+/.gocache/
+/.gopath/
+
+# Node artifacts
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.svelte-kit/
+
+# Editor/OS junk
+.DS_Store
+*.log
+.env.local
