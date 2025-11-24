@@ -65,19 +65,3 @@ spec:
             limits:
               cpu: 300m
               memory: 384Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: workouts
-  namespace: final-project
-  labels:
-    app: workouts
-spec:
-  type: ClusterIP
-  selector:
-    app: workouts
-  ports:
-    - name: grpc
-      port: 50051
-      targetPort: 50051

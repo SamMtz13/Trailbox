@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: maps
+  namespace: final-project
+  labels:
+    app: maps
+spec:
+  type: ClusterIP
+  selector:
+    app: maps
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: 50051

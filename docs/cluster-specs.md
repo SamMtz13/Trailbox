@@ -27,11 +27,11 @@ Todos los flujos de inter-servicio pasan por el gateway; no hay llamadas directa
   - `maps`: id (uuid), route_id, geojson, created_at.
 
 ## Manifiestos Kubernetes (`k8s/`)
-- `namespace.yaml`: crea el namespace `final-project`.
-- `postgres.yaml`: secret de credenciales, PVC y StatefulSet/PostgreSQL + Service `ClusterIP`.
-- `users.yaml`, `routes.yaml`, `workouts.yaml`, `reviews.yaml`, `notifications.yaml`, `maps.yaml`, `leaderboard.yaml`: Deployments gRPC (ClusterIP), probes HTTP `/health` en 8081, recursos ~150m CPU / 192Mi RAM.
-- `gateway.yaml`: Deployment + Service `LoadBalancer` en puerto 8080. Variables apuntan a los DNS de cada servicio.
-- `frontend.yaml`: Deployment + Service `ClusterIP` en puerto 80 (se expone vía port-forward/Ingress según el clúster).
+- `namespace/namespace.yaml`: crea el namespace `final-project`.
+- `postgres/`: agrupa `secret.yaml`, `pvc.yaml`, `statefulset.yaml` y `service.yaml` para la base de datos.
+- `users/`, `routes/`, `workouts/`, `reviews/`, `notifications/`, `maps/`, `leaderboard/`: cada carpeta contiene `deployment.yaml` y `service.yaml` (gRPC ClusterIP, probes HTTP `/health` en 8081, recursos ~150m CPU / 192Mi RAM).
+- `gateway/`: `deployment.yaml` + `service.yaml` (LoadBalancer puerto 8080). Las variables apuntan a los DNS de cada servicio interno.
+- `frontend/`: `deployment.yaml` + `service.yaml` (ClusterIP puerto 80; se expone vía port-forward/Ingress según el clúster).
 
 ## Exposición de servicios
 - **Público**: solo el gateway (`gateway` Service tipo `LoadBalancer`, puerto 8080). Endpoint interno esperado: `http://gateway.final-project.svc.cluster.local:8080`.

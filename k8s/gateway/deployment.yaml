@@ -58,19 +58,3 @@ spec:
             limits:
               cpu: 300m
               memory: 384Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: gateway
-  namespace: final-project
-  labels:
-    app: gateway
-spec:
-  type: LoadBalancer
-  selector:
-    app: gateway
-  ports:
-    - name: http
-      port: 8080
-      targetPort: 8080

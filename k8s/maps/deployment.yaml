@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: leaderboard
+  name: maps
   namespace: final-project
   labels:
-    app: leaderboard
+    app: maps
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: leaderboard
+      app: maps
   template:
     metadata:
       labels:
-        app: leaderboard
+        app: maps
     spec:
       containers:
-        - name: leaderboard
-          image: trailbox/leaderboard:latest
+        - name: maps
+          image: trailbox/maps:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50051
@@ -65,19 +65,3 @@ spec:
             limits:
               cpu: 300m
               memory: 384Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: leaderboard
-  namespace: final-project
-  labels:
-    app: leaderboard
-spec:
-  type: ClusterIP
-  selector:
-    app: leaderboard
-  ports:
-    - name: grpc
-      port: 50051
-      targetPort: 50051

@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: users
+  name: notifications
   namespace: final-project
   labels:
-    app: users
+    app: notifications
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: users
+      app: notifications
   template:
     metadata:
       labels:
-        app: users
+        app: notifications
     spec:
       containers:
-        - name: users
-          image: trailbox/users:latest
+        - name: notifications
+          image: trailbox/notifications:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50051
@@ -65,19 +65,3 @@ spec:
             limits:
               cpu: 300m
               memory: 384Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: users
-  namespace: final-project
-  labels:
-    app: users
-spec:
-  type: ClusterIP
-  selector:
-    app: users
-  ports:
-    - name: grpc
-      port: 50051
-      targetPort: 50051
