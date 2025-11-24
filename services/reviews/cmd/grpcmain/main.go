@@ -19,7 +19,6 @@ import (
 	pb "trailbox/gen/reviews"
 	reviewsctrl "trailbox/services/reviews/internal/controller"
 	reviewsdb "trailbox/services/reviews/internal/db"
-	reviewconsul "trailbox/services/reviews/internal/discovery/consul"
 	"trailbox/services/reviews/internal/model"
 	reviewrepo "trailbox/services/reviews/internal/repository/db"
 
@@ -109,7 +108,7 @@ func main() {
 	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	// 3️⃣ Health HTTP (para Consul)
+	// 3️⃣ Health HTTP (para probes)
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -121,20 +120,9 @@ func main() {
 		}
 	}()
 
-	// 4️⃣ Registro en Consul
-	reg, err := reviewconsul.NewRegistrar()
-	if err != nil {
-		log.Fatalf("[reviews] consul init error: %v", err)
-	}
+	log.Printf("[reviews] readiness HTTP on :%d", healthHTTPPort)
 
-	addr := getenvOr("SERVICE_ADDRESS", "reviews")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "reviews"), addr, healthHTTPPort, "/health")
-	if err != nil {
-		log.Fatalf("[reviews] consul register error: %v", err)
-	}
-	log.Printf("[reviews] registered in consul id=%s", id)
-
-	// 5️⃣ Servidor principal
+	// 4️⃣ Servidor principal
 	go func() {
 		log.Printf("[reviews] 🚀 gRPC listening on :%s", port)
 		if err := grpcServer.Serve(lis); err != nil {
@@ -142,14 +130,13 @@ func main() {
 		}
 	}()
 
-	// 6️⃣ Apagado elegante
+	// 5️⃣ Apagado elegante
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
 	log.Println("[reviews] shutting down...")
 	grpcServer.GracefulStop()
-	reg.Deregister()
 
 	sqlDB, _ := conn.DB()
 	_ = sqlDB.Close()

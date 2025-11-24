@@ -4,7 +4,6 @@ go 1.24.5
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/consul/api v1.32.1
 	github.com/joho/godotenv v1.5.1
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.10
@@ -13,16 +12,6 @@ require (
 )
 
 require (
-	github.com/armon/go-metrics v0.4.1 // indirect
-	github.com/fatih/color v1.16.0 // indirect
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-hclog v1.5.0 // indirect
-	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.6.0 // indirect

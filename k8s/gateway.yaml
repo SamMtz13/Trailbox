@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: final-project
+  labels:
+    app: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: trailbox/gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: PORT
+              value: "8080"
+            - name: USERS_SERVICE_ADDR
+              value: users.final-project.svc.cluster.local:50051
+            - name: ROUTES_SERVICE_ADDR
+              value: routes.final-project.svc.cluster.local:50051
+            - name: WORKOUTS_SERVICE_ADDR
+              value: workouts.final-project.svc.cluster.local:50051
+            - name: REVIEWS_SERVICE_ADDR
+              value: reviews.final-project.svc.cluster.local:50051
+            - name: LEADERBOARD_SERVICE_ADDR
+              value: leaderboard.final-project.svc.cluster.local:50051
+            - name: NOTIFICATIONS_SERVICE_ADDR
+              value: notifications.final-project.svc.cluster.local:50051
+            - name: MAPS_SERVICE_ADDR
+              value: maps.final-project.svc.cluster.local:50051
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 150m
+              memory: 192Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: final-project
+  labels:
+    app: gateway
+spec:
+  type: LoadBalancer
+  selector:
+    app: gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

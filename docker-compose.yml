@@ -1,20 +1,6 @@
 version: "3.9"
 
 services:
-  consul:
-    image: hashicorp/consul:1.17
-    container_name: trailbox-consul
-    command: agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0
-    ports:
-      - "8500:8500"       # Web UI / API
-      - "8600:8600/udp"   # DNS
-    healthcheck:
-      test: ["CMD", "consul", "info"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-    restart: unless-stopped
-
   postgres:
     image: postgres:16
     container_name: trailbox-postgres
@@ -32,6 +18,10 @@ services:
       timeout: 3s
       retries: 5
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - postgres.final-project.svc.cluster.local
 
   # =======================
   # USERS (gRPC + health HTTP)
@@ -43,27 +33,25 @@ services:
     container_name: trailbox-users
     environment:
       - PORT=50051
-      - SERVICE_NAME=users
-      - SERVICE_ADDRESS=users
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
-      - DB_HOST=postgres
+      - DB_HOST=postgres.final-project.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
       - DB_NAME=trailbox
     ports:
       - "8011:50051"   # gRPC externo
-      - "8111:8081"    # HTTP health externo 
+      - "8111:8081"    # HTTP health externo
     depends_on:
-      consul:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - users.final-project.svc.cluster.local
 
   # =======================
-  # ROUTES (HTTP)
+  # ROUTES (gRPC + health HTTP)
   # =======================
   routes:
     build:
@@ -72,11 +60,7 @@ services:
     container_name: trailbox-routes
     environment:
       - PORT=50051
-      - SERVICE_NAME=routes
-      - SERVICE_ADDRESS=routes
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
-      - DB_HOST=postgres
+      - DB_HOST=postgres.final-project.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -84,11 +68,13 @@ services:
     ports:
       - "8002:50051"
     depends_on:
-      consul:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - routes.final-project.svc.cluster.local
 
   # =======================
   # WORKOUTS (gRPC + health HTTP)
@@ -100,11 +86,7 @@ services:
     container_name: trailbox-workouts
     environment:
       - PORT=50051
-      - SERVICE_NAME=workouts
-      - SERVICE_ADDRESS=workouts
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
-      - DB_HOST=postgres
+      - DB_HOST=postgres.final-project.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -113,14 +95,16 @@ services:
       - "8003:50051"
       - "8103:8081"
     depends_on:
-      consul:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - workouts.final-project.svc.cluster.local
 
   # =======================
-  # REVIEWS (HTTP)
+  # REVIEWS (gRPC + health HTTP)
   # =======================
   reviews:
     build:
@@ -129,11 +113,7 @@ services:
     container_name: trailbox-reviews
     environment:
       - PORT=50051
-      - SERVICE_NAME=reviews
-      - SERVICE_ADDRESS=reviews
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
-      - DB_HOST=postgres
+      - DB_HOST=postgres.final-project.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -141,14 +121,16 @@ services:
     ports:
       - "8004:50051"
     depends_on:
-      consul:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - reviews.final-project.svc.cluster.local
 
   # =======================
-  # NOTIFICATIONS (HTTP)
+  # NOTIFICATIONS (gRPC + health HTTP)
   # =======================
   notifications:
     build:
@@ -157,11 +139,7 @@ services:
     container_name: trailbox-notifications
     environment:
       - PORT=50051
-      - SERVICE_NAME=notifications
-      - SERVICE_ADDRESS=notifications
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
-      - DB_HOST=postgres
+      - DB_HOST=postgres.final-project.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -169,11 +147,13 @@ services:
     ports:
       - "8005:50051"
     depends_on:
-      consul:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - notifications.final-project.svc.cluster.local
 
   # =======================
   # MAPS (gRPC + health HTTP)
@@ -185,11 +165,7 @@ services:
     container_name: trailbox-maps
     environment:
       - PORT=50051
-      - SERVICE_NAME=maps
-      - SERVICE_ADDRESS=maps
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
-      - DB_HOST=postgres
+      - DB_HOST=postgres.final-project.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -198,11 +174,13 @@ services:
       - "8006:50051"
       - "8106:8081"
     depends_on:
-      consul:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - maps.final-project.svc.cluster.local
 
   # =======================
   # LEADERBOARD (gRPC + health HTTP)
@@ -214,11 +192,7 @@ services:
     container_name: trailbox-leaderboard
     environment:
       - PORT=50051
-      - SERVICE_NAME=leaderboard
-      - SERVICE_ADDRESS=leaderboard
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
-      - DB_HOST=postgres
+      - DB_HOST=postgres.final-project.svc.cluster.local
       - DB_PORT=5432
       - DB_USER=trailbox
       - DB_PASS=trailbox
@@ -227,11 +201,13 @@ services:
       - "8007:50051"
       - "8107:8081"
     depends_on:
-      consul:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - leaderboard.final-project.svc.cluster.local
 
   # =======================
   # GATEWAY (HTTP)
@@ -242,17 +218,36 @@ services:
       dockerfile: services/gateway/Dockerfile
     container_name: trailbox-gateway
     environment:
-      - PORT=50051
-      - SERVICE_NAME=gateway
-      - SERVICE_ADDRESS=gateway
-      - SERVICE_HEALTH_PATH=/health
-      - CONSUL_HTTP_ADDR=http://consul:8500
+      - PORT=8080
+      - USERS_SERVICE_ADDR=users.final-project.svc.cluster.local:50051
+      - ROUTES_SERVICE_ADDR=routes.final-project.svc.cluster.local:50051
+      - WORKOUTS_SERVICE_ADDR=workouts.final-project.svc.cluster.local:50051
+      - REVIEWS_SERVICE_ADDR=reviews.final-project.svc.cluster.local:50051
+      - LEADERBOARD_SERVICE_ADDR=leaderboard.final-project.svc.cluster.local:50051
+      - NOTIFICATIONS_SERVICE_ADDR=notifications.final-project.svc.cluster.local:50051
+      - MAPS_SERVICE_ADDR=maps.final-project.svc.cluster.local:50051
     ports:
-      - "8080:50051"
+      - "8080:8080"
     depends_on:
-      consul:
-        condition: service_healthy
+      users:
+        condition: service_started
+      routes:
+        condition: service_started
+      workouts:
+        condition: service_started
+      reviews:
+        condition: service_started
+      leaderboard:
+        condition: service_started
+      notifications:
+        condition: service_started
+      maps:
+        condition: service_started
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - gateway.final-project.svc.cluster.local
 
   # =======================
   # MIGRATOR
@@ -268,10 +263,14 @@ services:
       - ./services/workouts/internal/migrations:/migrations/workouts
     entrypoint: [
       "sh", "-c",
-      "migrate -path=/migrations/users -database postgres://trailbox:trailbox@postgres:5432/trailbox?sslmode=disable up && \
-       migrate -path=/migrations/routes -database postgres://trailbox:trailbox@postgres:5432/trailbox?sslmode=disable up && \
-       migrate -path=/migrations/workouts -database postgres://trailbox:trailbox@postgres:5432/trailbox?sslmode=disable up"
+      "migrate -path=/migrations/users -database postgres://trailbox:trailbox@postgres.final-project.svc.cluster.local:5432/trailbox?sslmode=disable up && \
+       migrate -path=/migrations/routes -database postgres://trailbox:trailbox@postgres.final-project.svc.cluster.local:5432/trailbox?sslmode=disable up && \
+       migrate -path=/migrations/workouts -database postgres://trailbox:trailbox@postgres.final-project.svc.cluster.local:5432/trailbox?sslmode=disable up"
     ]
+    networks:
+      default:
+        aliases:
+          - migrator.final-project.svc.cluster.local
 
 volumes:
   pgdata: {}

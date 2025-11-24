@@ -24,7 +24,6 @@ import (
 
 	userctrl "trailbox/services/users/internal/controller/users"
 	"trailbox/services/users/internal/db"
-	userconsul "trailbox/services/users/internal/discovery/consul"
 	"trailbox/services/users/internal/model"
 	userrepo "trailbox/services/users/internal/repository/db"
 
@@ -142,18 +141,9 @@ func main() {
 	}()
 
 	// ===============================
-	// 5️⃣ Registro en Consul
+	// 5️⃣ Readiness log (health HTTP already running)
 	// ===============================
-	reg, err := userconsul.NewRegistrar()
-	if err != nil {
-		log.Fatalf("[users] consul registrar init error: %v", err)
-	}
-	addr := getenvOr("SERVICE_ADDRESS", "users")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "users"), addr, healthHTTPPort, "/health")
-	if err != nil {
-		log.Fatalf("[users] consul register error: %v", err)
-	}
-	log.Printf("[users] consul registered id=%s", id)
+	log.Printf("[users] readiness HTTP on :%d", healthHTTPPort)
 
 	// ===============================
 	// 6️⃣ Servidor gRPC principal
@@ -174,7 +164,6 @@ func main() {
 
 	log.Println("[users] shutting down...")
 	grpcServer.GracefulStop()
-	reg.Deregister()
 	log.Println("[users] graceful shutdown complete")
 }
 

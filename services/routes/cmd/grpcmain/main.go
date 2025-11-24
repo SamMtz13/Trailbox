@@ -23,7 +23,6 @@ import (
 
 	routesctrl "trailbox/services/routes/internal/controller/routes"
 	"trailbox/services/routes/internal/db"
-	consuldiscovery "trailbox/services/routes/internal/discovery/consul"
 	"trailbox/services/routes/internal/model"
 	routesrepo "trailbox/services/routes/internal/repository/db"
 
@@ -116,9 +115,8 @@ func main() {
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
 	// ===============================
-	// 4️⃣ Registro en Consul
+	// 4️⃣ HTTP health (for k8s probes)
 	// ===============================
-
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -130,17 +128,7 @@ func main() {
 		}
 	}()
 
-	reg, err := consuldiscovery.NewRegistrar()
-	if err != nil {
-		log.Fatalf("[routes] consul init error: %v", err)
-	}
-
-	addr := getenvOr("SERVICE_ADDRESS", "routes")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "routes"), addr, healthHTTPPort, "/health")
-	if err != nil {
-		log.Fatalf("[routes] consul register error: %v", err)
-	}
-	log.Printf("[routes] consul registered id=%s", id)
+	log.Printf("[routes] readiness HTTP on :%d", healthHTTPPort)
 
 	// ===============================
 	// 5️⃣ Arranque del servidor
@@ -161,7 +149,6 @@ func main() {
 
 	log.Println("[routes] shutting down...")
 	grpcServer.GracefulStop()
-	reg.Deregister()
 	log.Println("[routes] graceful shutdown complete")
 }
 

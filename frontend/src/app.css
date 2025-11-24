@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #0b1f17;
+  background: radial-gradient(circle at top left, #f1f5f3, #dfe9e2 45%, #cde0d5);
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #0f1c16;
+  min-height: 100vh;
+}
+
+.card {
+  @apply bg-white/80 backdrop-blur border border-emerald-50 shadow-sm rounded-2xl p-6 transition hover:-translate-y-1 hover:shadow-lg;
+}
+
+.button-primary {
+  @apply inline-flex items-center justify-center rounded-lg bg-clay text-white px-4 py-2 font-semibold shadow hover:opacity-90 transition;
+}
+
+.button-ghost {
+  @apply inline-flex items-center justify-center rounded-lg border border-emerald-200 px-4 py-2 text-forest font-semibold hover:bg-emerald-50 transition;
+}
+
+.input {
+  @apply block w-full rounded-lg border border-emerald-200 bg-white/80 px-3 py-2 shadow-sm focus:border-clay focus:ring-clay;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full bg-emerald-50 text-forest px-3 py-1 text-xs font-semibold;
+}

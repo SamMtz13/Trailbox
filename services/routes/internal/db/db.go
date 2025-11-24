@@ -12,11 +12,11 @@ import (
 )
 
 func Connect() (*gorm.DB, error) {
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	user := os.Getenv("DB_USER")
-	pass := os.Getenv("DB_PASS")
-	name := os.Getenv("DB_NAME")
+	host := getenvOr("DB_HOST", "postgres.final-project.svc.cluster.local")
+	port := getenvOr("DB_PORT", "5432")
+	user := getenvOr("DB_USER", "trailbox")
+	pass := getenvOr("DB_PASS", "trailbox")
+	name := getenvOr("DB_NAME", "trailbox")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=America/Mexico_City",
 		host, user, pass, name, port)
@@ -35,4 +35,11 @@ func Connect() (*gorm.DB, error) {
 
 	log.Println("[routes] ✅ Connected to PostgreSQL")
 	return db, nil
+}
+
+func getenvOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

@@ -7,7 +7,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 
-COPY services/gateway/ ./services/gateway/
+COPY . .
 
 WORKDIR /app/services/gateway
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /service ./cmd

@@ -16,11 +16,11 @@ type Repository struct {
 }
 
 func Connect() (*gorm.DB, error) {
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	pass := os.Getenv("DB_PASS")
-	name := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
+	host := getenvOr("DB_HOST", "postgres.final-project.svc.cluster.local")
+	user := getenvOr("DB_USER", "trailbox")
+	pass := getenvOr("DB_PASS", "trailbox")
+	name := getenvOr("DB_NAME", "trailbox")
+	port := getenvOr("DB_PORT", "5432")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		host, user, pass, name, port)
@@ -36,6 +36,13 @@ func Connect() (*gorm.DB, error) {
 
 	log.Println("[notifications] ✅ Connected to PostgreSQL")
 	return db, nil
+}
+
+func getenvOr(k, def string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return def
 }
 
 func New(db *gorm.DB) *Repository {

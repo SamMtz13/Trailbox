@@ -23,7 +23,6 @@ import (
 
 	wctrl "trailbox/services/workouts/internal/controller/workouts"
 	"trailbox/services/workouts/internal/db"
-	wconsul "trailbox/services/workouts/internal/discovery/consul"
 	"trailbox/services/workouts/internal/model"
 	wrepo "trailbox/services/workouts/internal/repository/db"
 
@@ -112,7 +111,7 @@ func main() {
 	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	// 3️⃣ Health HTTP adicional (para Consul)
+	// 3️⃣ Health HTTP adicional
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -124,20 +123,9 @@ func main() {
 		}
 	}()
 
-	// 4️⃣ Registro en Consul
-	reg, err := wconsul.NewRegistrar()
-	if err != nil {
-		log.Fatalf("[workouts] consul init error: %v", err)
-	}
+	log.Printf("[workouts] readiness HTTP on :%d", healthHTTPPort)
 
-	addr := getenvOr("SERVICE_ADDRESS", "workouts")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "workouts"), addr, healthHTTPPort, "/health")
-	if err != nil {
-		log.Fatalf("[workouts] consul register error: %v", err)
-	}
-	log.Printf("[workouts] consul registered id=%s", id)
-
-	// 5️⃣ Arranque del servidor
+	// 4️⃣ Arranque del servidor
 	go func() {
 		log.Printf("[workouts] 🚀 gRPC listening on :%s", port)
 		if err := grpcServer.Serve(lis); err != nil {
@@ -145,14 +133,13 @@ func main() {
 		}
 	}()
 
-	// 6️⃣ Apagado elegante
+	// 5️⃣ Apagado elegante
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
 	log.Println("[workouts] shutting down...")
 	grpcServer.GracefulStop()
-	reg.Deregister()
 
 	sqlDB, _ := conn.DB()
 	_ = sqlDB.Close()

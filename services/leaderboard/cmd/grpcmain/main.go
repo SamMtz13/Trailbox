@@ -21,7 +21,6 @@ import (
 
 	lbctrl "trailbox/services/leaderboard/internal/controller"
 	lbdb "trailbox/services/leaderboard/internal/db"
-	lbconsul "trailbox/services/leaderboard/internal/discovery/consul"
 	lbrepo "trailbox/services/leaderboard/internal/repository/db"
 )
 
@@ -92,16 +91,7 @@ func main() {
 		}
 	}()
 
-	reg, err := lbconsul.NewRegistrar()
-	if err != nil {
-		log.Fatalf("[leaderboard] consul error: %v", err)
-	}
-	addr := getenvOr("SERVICE_ADDRESS", "leaderboard")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "leaderboard"), addr, healthHTTPPort, "/health")
-	if err != nil {
-		log.Fatalf("[leaderboard] consul register error: %v", err)
-	}
-	log.Printf("[leaderboard] registered in Consul as id=%s", id)
+	log.Printf("[leaderboard] readiness HTTP on :%d", healthHTTPPort)
 
 	go func() {
 		log.Printf("[leaderboard] 🚀 gRPC listening on :%s", port)
@@ -116,7 +106,6 @@ func main() {
 
 	log.Println("[leaderboard] shutting down...")
 	grpcServer.GracefulStop()
-	reg.Deregister()
 	log.Println("[leaderboard] graceful shutdown complete")
 }
 

@@ -4,10 +4,4 @@ docker compose up -d routes      pa arriba routes
 
 docker compose logs -f routes   ver logs, para ver el ping con 8001/health (comunicacion)
 
-
-SERVICE DISCOVERY VIA CONSUL
-
 PROMETHEUS --- LOGS 
-
-
-docker compose down -v por si falla consul 

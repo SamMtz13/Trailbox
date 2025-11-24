@@ -21,7 +21,6 @@ import (
 
 	mapctrl "trailbox/services/map/internal/controller"
 	mapdb "trailbox/services/map/internal/db"
-	mapconsul "trailbox/services/map/internal/discovery/consul"
 	maprepo "trailbox/services/map/internal/repository/db"
 )
 
@@ -76,7 +75,7 @@ func main() {
 	healthpb.RegisterHealthServer(grpcServer, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	// HTTP health para Consul
+	// HTTP health para probes
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -88,16 +87,7 @@ func main() {
 		}
 	}()
 
-	reg, err := mapconsul.NewRegistrar()
-	if err != nil {
-		log.Fatalf("[map] consul error: %v", err)
-	}
-	addr := getenvOr("SERVICE_ADDRESS", "map")
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "map"), addr, healthHTTPPort, "/health")
-	if err != nil {
-		log.Fatalf("[map] consul register error: %v", err)
-	}
-	log.Printf("[map] registered in Consul as id=%s", id)
+	log.Printf("[map] readiness HTTP on :%d", healthHTTPPort)
 
 	go func() {
 		log.Printf("[map] 🚀 gRPC listening on :%s", port)
@@ -112,7 +102,6 @@ func main() {
 
 	log.Println("[map] shutting down...")
 	grpcServer.GracefulStop()
-	reg.Deregister()
 	log.Println("[map] graceful shutdown complete")
 }
 

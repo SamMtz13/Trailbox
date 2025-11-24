@@ -19,7 +19,6 @@ import (
 	pb "trailbox/gen/notifications"
 	notifctrl "trailbox/services/notifications/internal/controller"
 	notifdb "trailbox/services/notifications/internal/db"
-	notifconsul "trailbox/services/notifications/internal/discovery/consul"
 	"trailbox/services/notifications/internal/model"
 	notifrepo "trailbox/services/notifications/internal/repository/db"
 
@@ -113,7 +112,7 @@ func main() {
 	healthpb.RegisterHealthServer(s, hs)
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	// 3️⃣ Health HTTP adicional (para Consul)
+	// 3️⃣ Health HTTP adicional
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -125,20 +124,9 @@ func main() {
 		}
 	}()
 
-	// 4️⃣ Registro en Consul
-	reg, err := notifconsul.NewRegistrar()
-	if err != nil {
-		log.Fatalf("[notifications] consul registrar init error: %v", err)
-	}
-	addr := getenvOr("SERVICE_ADDRESS", "notifications")
+	log.Printf("[notifications] readiness HTTP on :%d", healthHTTPPort)
 
-	id, err := reg.Register(getenvOr("SERVICE_NAME", "notifications"), addr, healthHTTPPort, "/health")
-	if err != nil {
-		log.Fatalf("[notifications] consul register error: %v", err)
-	}
-	log.Printf("[notifications] consul registered id=%s", id)
-
-	// 5️⃣ Run server
+	// 4️⃣ Run server
 	go func() {
 		log.Printf("[notifications] 🚀 listening on :%s", port)
 		if err := s.Serve(lis); err != nil {
@@ -146,14 +134,13 @@ func main() {
 		}
 	}()
 
-	// 6️⃣ Graceful shutdown
+	// 5️⃣ Graceful shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
 	log.Println("[notifications] shutting down...")
 	s.GracefulStop()
-	reg.Deregister()
 
 	sqlDB, _ := conn.DB()
 	_ = sqlDB.Close()
