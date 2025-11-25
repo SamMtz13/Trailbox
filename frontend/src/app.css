@@ -2,24 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fondo general – montaña oscura con neblina */
 body {
-  @apply min-h-screen bg-rock-900 text-gray-100;
-  background-image: theme('backgroundImage.mountain-gradient');
+  @apply min-h-screen text-gray-50;
+  background:
+    linear-gradient(135deg, rgba(13, 148, 136, 0.85), rgba(30, 41, 59, 0.92)),
+    url('/trail-bg.png');
   background-attachment: fixed;
+  background-size: cover;
 }
 
-/* Modo claro opcional (si algún día quieres) */
 :root {
+  --card-bg: rgba(15, 23, 42, 0.92);
+  --card-border: rgba(45, 212, 191, 0.25);
+  --card-shadow: 0 20px 50px rgba(6, 24, 44, 0.6);
+}
+
+.light {
   --card-bg: rgba(255, 255, 255, 0.96);
   --card-border: rgba(148, 163, 184, 0.35);
   --card-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
-}
-
-.dark {
-  --card-bg: rgba(15, 23, 42, 0.9);
-  --card-border: rgba(30, 64, 175, 0.45);
-  --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
 }
 
 /* Tarjetas tipo “gear de bici” */

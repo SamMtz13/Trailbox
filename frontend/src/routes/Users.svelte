@@ -26,38 +26,38 @@
   });
 </script>
 
-<section class="card space-y-4">
-  <div class="flex items-center justify-between gap-3 flex-wrap">
+<section class="space-y-4 rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl backdrop-blur">
+  <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <p class="badge">Usuarios</p>
-      <h2 class="text-xl font-semibold text-forest">Listado</h2>
-      <p class="text-sm text-emerald-800">GET /api/users → gRPC Users.ListUsers</p>
+      <p class="badge bg-white/5 text-emerald-200">Usuarios</p>
+      <h2 class="text-2xl font-semibold text-white">Catálogo</h2>
+      <p class="text-sm text-emerald-200/80">GET /api/users → gRPC Users.ListUsers</p>
     </div>
-    <button class="button-ghost" on:click={load}>Refrescar</button>
+    <button class="button-primary" on:click={load}>Refrescar datos</button>
   </div>
 
   {#if loading}
-    <p class="text-emerald-700">Cargando usuarios...</p>
+    <p class="animate-pulse text-emerald-200">Sincronizando usuarios...</p>
   {:else if error}
-    <p class="text-red-700">{error}</p>
+    <p class="text-red-400 font-semibold">{error}</p>
   {:else if users.length === 0}
-    <p class="text-emerald-700">No hay usuarios registrados.</p>
+    <p class="text-emerald-100">No hay usuarios registrados.</p>
   {:else}
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="text-left text-emerald-700">
+    <div class="overflow-hidden rounded-2xl border border-white/5 bg-slate-950/40">
+      <table class="min-w-full text-sm text-white/90">
+        <thead class="bg-white/5 text-left text-emerald-200 uppercase tracking-wide text-xs">
           <tr>
-            <th class="py-2 pr-4">ID</th>
-            <th class="py-2 pr-4">Nombre</th>
-            <th class="py-2 pr-4">Email</th>
+            <th class="px-4 py-3">ID</th>
+            <th class="px-4 py-3">Nombre</th>
+            <th class="px-4 py-3">Email</th>
           </tr>
         </thead>
-        <tbody class="text-forest divide-y divide-emerald-50">
+        <tbody class="divide-y divide-slate-800/80">
           {#each users as user}
-            <tr>
-              <td class="py-2 pr-4 font-mono text-xs">{user.id}</td>
-              <td class="py-2 pr-4">{user.name}</td>
-              <td class="py-2 pr-4">{user.email}</td>
+            <tr class="hover:bg-emerald-500/5 transition">
+              <td class="px-4 py-3 font-mono text-xs text-emerald-200">{user.id}</td>
+              <td class="px-4 py-3">{user.name}</td>
+              <td class="px-4 py-3 text-emerald-300">{user.email}</td>
             </tr>
           {/each}
         </tbody>
