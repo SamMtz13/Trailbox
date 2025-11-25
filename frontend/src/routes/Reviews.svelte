@@ -40,7 +40,9 @@
     }
   }
 
-  onMount(load);
+  onMount(() => {
+    load();
+  });
 </script>
 
 <section class="card space-y-4">

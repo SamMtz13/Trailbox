@@ -1,7 +1,18 @@
 <script lang="ts">
   import { api } from '../lib/api';
 
-  type Notification = { id: string; user_id: string; message: string; read: boolean; created_at: string };
+  type Notification = {
+    id: string;
+    user_id: string;
+    message: string;
+    read: boolean;
+    created_at: string;
+  };
+
+  // 👇 Tipo de la respuesta del backend
+  type NotificationsResponse = {
+    notifications?: Notification[];
+  };
 
   let userId = '';
   let notifications: Notification[] = [];
@@ -15,8 +26,10 @@
         notifications = [];
         return;
       }
-      const data = await api.getNotifications(userId);
-      notifications = data.notifications || [];
+
+      // 👇 le decimos a TS qué tipo tiene `data`
+      const data = (await api.getNotifications(userId)) as NotificationsResponse;
+      notifications = data.notifications ?? [];
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     }
@@ -33,6 +46,7 @@
   }
 </script>
 
+
 <section class="card space-y-4">
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <div>
@@ -45,14 +59,34 @@
 
   <div class="grid md:grid-cols-2 gap-4">
     <div class="card space-y-3">
-      <label class="text-sm text-emerald-800 font-semibold" for="notif-user-filter">Consultar por usuario</label>
-      <input id="notif-user-filter" class="input" placeholder="User ID" bind:value={userId} />
+      <label class="text-sm text-emerald-800 font-semibold" for="notif-user-filter">
+        Consultar por usuario
+      </label>
+      <input
+        id="notif-user-filter"
+        class="input"
+        placeholder="User ID"
+        bind:value={userId}
+      />
       <button class="button-primary" on:click={load}>Buscar</button>
     </div>
     <div class="card space-y-3">
-      <label class="text-sm text-emerald-800 font-semibold" for="notif-user">Enviar notificación</label>
-      <input id="notif-user" class="input" placeholder="User ID" bind:value={form.userId} />
-      <textarea id="notif-message" class="input" rows="3" placeholder="Mensaje" bind:value={form.message}></textarea>
+      <label class="text-sm text-emerald-800 font-semibold" for="notif-user">
+        Enviar notificación
+      </label>
+      <input
+        id="notif-user"
+        class="input"
+        placeholder="User ID"
+        bind:value={form.userId}
+      />
+      <textarea
+        id="notif-message"
+        class="input"
+        rows="3"
+        placeholder="Mensaje"
+        bind:value={form.message}
+      ></textarea>
       <button class="button-primary" on:click={submit}>Enviar</button>
     </div>
   </div>
@@ -66,10 +100,14 @@
       <div class="card">
         <div class="flex items-center justify-between gap-3">
           <span class="badge">{n.read ? 'LEÍDO' : 'NUEVO'}</span>
-          <span class="text-xs text-emerald-700">{new Date(n.created_at).toLocaleString()}</span>
+          <span class="text-xs text-emerald-700">
+            {new Date(n.created_at).toLocaleString()}
+          </span>
         </div>
         <p class="text-sm text-emerald-900 mt-2">{n.message}</p>
-        <p class="text-xs text-emerald-700 mt-2">User: <span class="font-mono">{n.user_id}</span></p>
+        <p class="text-xs text-emerald-700 mt-2">
+          User: <span class="font-mono">{n.user_id}</span>
+        </p>
       </div>
     {/each}
   </div>

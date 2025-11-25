@@ -1,37 +1,66 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color: #0b1f17;
-  background: radial-gradient(circle at top left, #f1f5f3, #dfe9e2 45%, #cde0d5);
-}
-
+/* Fondo general – montaña oscura con neblina */
 body {
-  margin: 0;
-  font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #0f1c16;
-  min-height: 100vh;
+  @apply min-h-screen bg-rock-900 text-gray-100;
+  background-image: theme('backgroundImage.mountain-gradient');
+  background-attachment: fixed;
 }
 
+/* Modo claro opcional (si algún día quieres) */
+:root {
+  --card-bg: rgba(255, 255, 255, 0.96);
+  --card-border: rgba(148, 163, 184, 0.35);
+  --card-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.dark {
+  --card-bg: rgba(15, 23, 42, 0.9);
+  --card-border: rgba(30, 64, 175, 0.45);
+  --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+}
+
+/* Tarjetas tipo “gear de bici” */
 .card {
-  @apply bg-white/80 backdrop-blur border border-emerald-50 shadow-sm rounded-2xl p-6 transition hover:-translate-y-1 hover:shadow-lg;
+  background: var(--card-bg);
+  border-radius: 1rem;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  padding: 1.2rem 1.3rem;
+  backdrop-filter: blur(18px);
 }
 
+/* Chips tipo placa de carrera */
+.badge {
+  @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+    bg-emerald-500/10 text-emerald-300 border border-emerald-500/40;
+}
+
+/* Botones */
 .button-primary {
-  @apply inline-flex items-center justify-center rounded-lg bg-clay text-white px-4 py-2 font-semibold shadow hover:opacity-90 transition;
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+    bg-emerald-500 hover:bg-emerald-400 text-slate-900 transition
+    shadow-md hover:shadow-lg active:scale-[0.97];
 }
 
 .button-ghost {
-  @apply inline-flex items-center justify-center rounded-lg border border-emerald-200 px-4 py-2 text-forest font-semibold hover:bg-emerald-50 transition;
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+    border border-emerald-500/40 text-emerald-200/90 bg-transparent
+    hover:bg-emerald-500/10 transition;
 }
 
+/* Inputs / selects */
 .input {
-  @apply block w-full rounded-lg border border-emerald-200 bg-white/80 px-3 py-2 shadow-sm focus:border-clay focus:ring-clay;
+  @apply w-full px-3 py-2 rounded-lg text-sm
+    bg-slate-900/60 border border-slate-600/70
+    text-slate-50 placeholder:text-slate-400
+    focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-400;
 }
 
-.badge {
-  @apply inline-flex items-center rounded-full bg-emerald-50 text-forest px-3 py-1 text-xs font-semibold;
+/* Scroll suave en <pre> largos */
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }

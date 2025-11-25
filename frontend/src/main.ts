@@ -1,12 +1,15 @@
-import './app.css';
+// src/main.ts
+import './app.css';         // 👈 IMPORTA LOS ESTILOS GLOBALES
+
 import App from './App.svelte';
+import { mount } from 'svelte';
 
 const target = document.getElementById('app');
 
 if (!target) {
-  throw new Error('Root element #app not found');
+  throw new Error('No se encontró el elemento #app');
 }
 
-const app = new App({ target });
-
-export default app;
+mount(App, {
+  target
+});
