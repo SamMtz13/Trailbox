@@ -244,7 +244,8 @@ data:
     \connect maps_db
     TRUNCATE TABLE maps;
     INSERT INTO maps (id, route_id, geojson, created_at) VALUES
-      ('ffffffff-ffff-ffff-ffff-ffffffffffff', '44444444-4444-4444-4444-444444444444', '{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-99.12,19.4],[-99.11,19.45]]}}'::jsonb, NOW()),
-      ('12121212-1212-1212-1212-121212121212', '55555555-5555-5555-5555-555555555555', '{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-99.2,19.3],[-99.18,19.35],[-99.16,19.38]]}}'::jsonb, NOW());
+      ('ffffffff-ffff-ffff-ffff-ffffffffffff', '44444444-4444-4444-4444-444444444444', '{"type":"Feature","properties":{"color":"#22c55e","label":"Sendero Bosque Encantado"},"geometry":{"type":"LineString","coordinates":[[-99.135,19.40],[-99.13,19.42],[-99.125,19.435],[-99.12,19.45]]}}'::jsonb, NOW()),
+      ('12121212-1212-1212-1212-121212121212', '55555555-5555-5555-5555-555555555555', '{"type":"Feature","properties":{"color":"#0ea5e9","label":"Ruta Laguna Azul"},"geometry":{"type":"LineString","coordinates":[[-99.21,19.29],[-99.20,19.31],[-99.19,19.34],[-99.18,19.37],[-99.17,19.395]]}}'::jsonb, NOW()),
+      ('23232323-2323-2323-2323-232323232323', '66666666-6666-6666-6666-666666666666', '{"type":"Feature","properties":{"color":"#f97316","label":"Ascenso Pico Norte"},"geometry":{"type":"LineString","coordinates":[[-99.07,19.48],[-99.065,19.5],[-99.06,19.525],[-99.055,19.55],[-99.05,19.565]]}}'::jsonb, NOW());
 
     \connect postgres

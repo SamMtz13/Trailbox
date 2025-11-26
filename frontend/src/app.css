@@ -65,3 +65,7 @@ pre {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
 }
+
+.leaflet-container {
+  /* ❌ quita height: 100% por ahora */
+}

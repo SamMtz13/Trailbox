@@ -1,5 +1,6 @@
 // src/main.ts
-import './app.css';         // 👈 IMPORTA LOS ESTILOS GLOBALES
+import './app.css';         
+import 'leaflet/dist/leaflet.css';
 
 import App from './App.svelte';
 import { mount } from 'svelte';

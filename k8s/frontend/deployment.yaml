@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: trailbox/frontend:v5
+          image: trailbox/frontend:v6
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

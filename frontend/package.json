@@ -20,6 +20,7 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
     "svelte": "^5.0.0"
   }
 }
